@@ -1,41 +1,24 @@
+extern crate input_linux;
 extern crate serde_derive;
 extern crate serde_json;
-extern crate input_linux;
 
-mod config;
-mod kb_key;
+mod event;
+mod karabiner;
 mod pipe;
 mod state;
 mod util;
 
-use std::fmt;
+use crate::event::Event;
+use crate::karabiner::KBConfig;
+use crate::state::StateManager;
+use input_linux::{EventKind, InputEvent};
 use std::env;
 use std::process;
 use std::sync::mpsc;
 use std::thread;
-use input_linux::{InputEvent, EventKind};
-use input_linux::sys::input_event;
-use crate::config::KBConfig;
-use crate::state::State;
-
-pub enum Event {
-    Timeout,
-    KeyEvent(input_event),
-}
-
-impl fmt::Debug for Event {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &Event::Timeout => write!(f, "Timeout"),
-            &Event::KeyEvent(ev) => {
-                let inp_ev = InputEvent::from_raw(&ev).unwrap();
-                write!(f, "KeyEvent({:?})", &inp_ev)
-            }
-        }
-    }
-}
 
 fn main() {
+    // TODO: better command line argument handling.
     let args = env::args().collect::<Vec<String>>();
     if args.len() != 2 {
         eprintln!("Config file argument required");
@@ -43,11 +26,13 @@ fn main() {
     }
 
     let kb_config = KBConfig::from_path(&args[1]).expect("failed to construct config");
-    let selected_profile = kb_config.profiles
+    let selected_profile = kb_config
+        .profiles
         .iter()
         .find(|p| p.selected)
         .expect("failed to find selected profile");
-    let state = State::from_profile(&selected_profile);
+
+    let mut state = StateManager::from_profile(&selected_profile);
 
     // Input channel: reads events from stdin.
     let (i_tx, i_rx) = mpsc::channel();
@@ -70,30 +55,31 @@ fn main() {
                         // These are optional and can be ignored.
                         // https://www.kernel.org/doc/html/v4.17/input/event-codes.html
                         EventKind::Misc => continue,
+
                         // Ignore all received synchronize events, since we send our own.
                         EventKind::Synchronize => continue,
 
-                        // TODO:
-                        //  should handle actions on key_down, key_up, etc.
-                        //  should be able to block key repeats (in between down and up)
+                        // TODO: should be able to block key repeats (in between down and up)
+                        // TODO: simultaneous modifications
+                        // TODO: handle mouse actions
                         EventKind::Key => {
-                            // TODO: complex modifications
-                            // TODO: simultaneous modifications
-                            // TODO: handle mouse actions as well?
-
-                            // TODO: order of operations
                             // https://pqrs.org/osx/karabiner/document.html#event-modification-chaining
 
                             state.apply_simple_modifications(&mut ev);
 
-                            o_tx.send(*ev.as_raw()).unwrap();
-                        },
+                            for emitted_ev in state.apply_complex_modifications(ev) {
+                                o_tx.send(*emitted_ev.as_raw()).unwrap();
+                            }
+
+                            state.update_modifiers(&ev);
+                        }
 
                         // Ignore anything else.
                         _ => {}
                     }
-                },
-                Ok(Event::Timeout) => {},
+                }
+                // TODO: handle timeouts when needed
+                Ok(Event::Timeout) => {}
                 Err(e) => {
                     eprintln!("{:?}", e);
                     process::exit(1);

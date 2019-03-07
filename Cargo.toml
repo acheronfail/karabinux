@@ -3,6 +3,7 @@ name = "karabinux"
 version = "0.1.0"
 authors = ["acheronfail"]
 edition = "2018"
+build = "build.rs"
 
 [dependencies]
 input-linux = "0.0.1"

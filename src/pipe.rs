@@ -1,17 +1,17 @@
+use crate::util::*;
+use crate::Event;
+use input_linux::sys;
 use std::io::{self, Read, Write};
 use std::mem;
 use std::slice;
 use std::sync::mpsc::{Receiver, Sender};
-use input_linux::sys;
-use crate::Event;
-use crate::util::*;
 
 // Reads a struct directly from `stdin`.
 pub fn read_struct<T>(reader: &mut Read) -> io::Result<T> {
     let mut buffer = vec![0; mem::size_of::<T>()];
     match reader.read_exact(&mut buffer) {
         Ok(_) => Ok(unsafe { std::ptr::read(buffer.as_ptr() as *const T) }),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
@@ -42,14 +42,20 @@ pub fn writer_thread(o_rx: Receiver<sys::input_event>) {
     let stdout = io::stdout();
     let mut stdout_handle = stdout.lock();
 
-    loop  {
+    loop {
         if let Ok(raw_event) = o_rx.recv() {
             write_struct::<sys::input_event>(&mut stdout_handle, &raw_event).unwrap();
             write_struct::<sys::input_event>(&mut stdout_handle, &sync_event_now()).unwrap();
 
-            // TODO: compile this only in debug mode
+            #[cfg(debug)]
             {
-                log_event(&input_linux::InputEvent::from_raw(&raw_event).unwrap(), true);
+                use input_linux::{InputEvent, Key};
+
+                let ev = InputEvent::from_raw(&raw_event).unwrap();
+                match Key::from_code(ev.code).unwrap() {
+                    Key::KeyEsc | Key::KeyGrave => {}
+                    _ => log_event(&ev, true),
+                }
             }
         }
     }

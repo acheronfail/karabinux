@@ -1,13 +1,16 @@
 use input_linux::Key;
 
 pub trait FromKBKeyCode {
-    fn from_kb_key_code(key_code: &str) -> Option<Self> where Self: Sized;
+    fn from_kb_key_code(key_code: &str) -> Option<Self>
+    where
+        Self: Sized;
 }
 
 impl FromKBKeyCode for Key {
     fn from_kb_key_code(key_code: &str) -> Option<Key> {
         match key_code {
             "caps_lock" => Some(Key::KeyCapsLock),
+            // TODO: handle pairs, ie: "shift" is either "left" or "right"
             "left_control" => Some(Key::KeyLeftCtrl),
             "left_shift" => Some(Key::KeyLeftShift),
             "left_option" => Some(Key::KeyLeftAlt),
@@ -214,7 +217,6 @@ impl FromKBKeyCode for Key {
             // "vk_consumer_next" => Some(Key::Key),
             // "volume_down" => Some(Key::Key),
             // "volume_up" => Some(Key::Key),
-
             _ => {
                 eprintln!("Failed to decode key_code: {}", key_code);
 
