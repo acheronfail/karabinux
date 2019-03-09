@@ -10,16 +10,16 @@ build:
 fmt:
 	cargo fmt
 
-# Runs grabber -> mapper -> emitter with the given device.
-@run device: build sudo
+# Runs `grabber -> mapper -> emitter` with the given device.
+@run device config='./test/config/default.json': build sudo
 	./target/debug/grabber -g -v "{{device}}" \
-		| ./target/debug/mapper -c ./test/config/config_1.json \
+		| ./target/debug/mapper -c {{config}} \
 		| sudo ./target/debug/emitter -v "{{device}}"
 
-# Runs grabber -> emitter.
+# Runs `grabber -> emitter`.
 @noop device: build sudo
 	./target/debug/grabber -g -v "{{device}}" | sudo ./target/debug/emitter -v "{{device}}"
 
-# Prompt for sudo (so it doesn't block other programs later on).
+# Prompt for sudo (required by the emitter for `libevdev_uinput` devices).
 @sudo:
 	sudo -v
