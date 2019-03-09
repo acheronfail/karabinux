@@ -1,31 +1,20 @@
-extern crate input_linux;
-extern crate serde_derive;
-extern crate serde_json;
+mod args;
 
-mod event;
-mod karabiner;
-mod pipe;
-mod state;
-mod util;
-
-use crate::event::Event;
-use crate::karabiner::KBConfig;
-use crate::state::StateManager;
+use args::Args;
 use input_linux::{EventKind, InputEvent};
-use std::env;
+use karabinux::event::Event;
+use karabinux::karabiner::KBConfig;
+use karabinux::pipe;
+use karabinux::state::StateManager;
 use std::process;
 use std::sync::mpsc;
 use std::thread;
+use structopt::StructOpt;
 
 fn main() {
-    // TODO: better command line argument handling.
-    let args = env::args().collect::<Vec<String>>();
-    if args.len() != 2 {
-        eprintln!("Config file argument required");
-        process::exit(1);
-    }
+    let args = Args::from_args();
 
-    let kb_config = KBConfig::from_path(&args[1]).expect("failed to construct config");
+    let kb_config = KBConfig::from_path(&args.config).expect("failed to construct config");
     let selected_profile = kb_config
         .profiles
         .iter()

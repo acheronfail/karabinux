@@ -1,0 +1,13 @@
+[package]
+name = "grabber"
+version = "0.1.0"
+authors = ["acheronfail <acheronfail@gmail.com>"]
+edition = "2018"
+description = "A program that's responsible for grabbing events from a device and emitting them to stdout"
+build = "../build.rs"
+
+[dependencies]
+evdev-rs = { git = "https://github.com/acheronfail/evdev-rs/", branch = "feat/uinput" }
+karabinux = { path = "../karabinux" }
+libc = "^0.2.36"
+structopt = "0.2"

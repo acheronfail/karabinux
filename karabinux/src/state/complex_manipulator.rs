@@ -71,7 +71,6 @@ impl ComplexManipulator {
                 // TODO: call shell command if it exists
                 // TODO: handle repeats in to_events
                 for to_event in &self.to_events {
-
                     // Emit manipulated event with the correct modifiers.
                     let key_state = KeyState::from(ev.value);
                     match key_state {

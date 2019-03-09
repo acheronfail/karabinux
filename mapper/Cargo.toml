@@ -1,0 +1,11 @@
+[package]
+name = "mapper"
+version = "0.1.0"
+authors = ["acheronfail <acheronfail@gmail.com>"]
+edition = "2018"
+build = "../build.rs"
+
+[dependencies]
+karabinux = { path = "../karabinux" }
+input-linux = "0.0.1"
+structopt = "0.2"

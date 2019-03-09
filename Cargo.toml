@@ -1,12 +1,2 @@
-[package]
-name = "karabinux"
-version = "0.1.0"
-authors = ["acheronfail"]
-edition = "2018"
-build = "build.rs"
-
-[dependencies]
-input-linux = "0.0.1"
-serde = "1.0"
-serde_json = "1.0"
-serde_derive = "1.0"
+[workspace]
+members = ["grabber", "mapper", "emitter", "karabinux"]

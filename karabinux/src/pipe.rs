@@ -1,5 +1,5 @@
+use crate::event::Event;
 use crate::util::*;
-use crate::Event;
 use input_linux::sys;
 use std::io::{self, Read, Write};
 use std::mem;
