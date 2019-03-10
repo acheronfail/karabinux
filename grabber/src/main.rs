@@ -32,16 +32,16 @@ fn main() {
     loop {
         let ev = grabber.next_event(NORMAL | BLOCKING);
 
-        // Exit if ESC is pressed twice in debug mode.
+        // Exit if `backspace` is pressed twice in a row in debug mode.
         #[cfg(debug)]
         {
             use evdev_rs::util::event_code_to_int;
 
             let (ev_type, ev_code) = event_code_to_int(&ev.event_code);
+            // ev_key && pressed
             if ev_type == 1 && ev.value == 1 {
-                // ev_key && pressed
+                // backspace
                 if ev_code == 14 && debug_last_ev_code == 14 {
-                    // backspace
                     process::exit(2);
                 }
 
