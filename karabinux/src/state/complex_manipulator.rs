@@ -1,6 +1,7 @@
 use crate::karabiner::{KBComplexModifications, KBManipulator, KBManipulatorKind};
 use crate::state::{FromEvent, ModifierState, ToEvent};
-use input_linux::{InputEvent, Key, KeyState};
+use evdev_rs::InputEvent;
+use evdev_rs::enums::EventCode;
 
 #[derive(Debug)]
 pub struct ComplexManipulator {
@@ -50,10 +51,11 @@ impl ComplexManipulator {
             return false;
         }
 
-        if let Some(from_key) = self.from_event.key {
-            let ev_key = Key::from_code(ev.code).unwrap();
-            if from_key == ev_key {
-                return true;
+        if let Some(ref from_key) = self.from_event.key {
+            if let EventCode::EV_KEY(ref ev_key) = ev.event_code {
+                if from_key == ev_key {
+                    return true;
+                }
             }
         }
 
@@ -66,33 +68,36 @@ impl ComplexManipulator {
         ev: &InputEvent,
         output_queue: &mut Vec<InputEvent>,
     ) {
-        if let Some(key) = self.from_event.key {
-            if key == Key::from_code(ev.code).unwrap() {
-                // TODO: call shell command if it exists
-                // TODO: handle repeats in to_events
-                for to_event in &self.to_events {
-                    // Emit manipulated event with the correct modifiers.
-                    let key_state = KeyState::from(ev.value);
-                    match key_state {
-                        KeyState::Pressed => {
-                            if let Some(v) = to_event.modifiers(key_state) {
-                                output_queue.extend(v);
+        if let Some(ref from_key) = self.from_event.key {
+            if let EventCode::EV_KEY(ref ev_key) = ev.event_code {
+                if from_key == ev_key {
+                    // TODO: call shell command if it exists
+                    // TODO: handle repeats in to_events
+                    for to_event in &self.to_events {
+                        // Emit manipulated event with the correct modifiers.
+                        match ev.value {
+                            // Pressed
+                            1 => {
+                                if let Some(v) = to_event.modifiers(ev.value) {
+                                    output_queue.extend(v);
+                                }
+                                if let Some(e) = to_event.key_event(ev.value) {
+                                    output_queue.push(e);
+                                }
                             }
-                            if let Some(e) = to_event.key_event(key_state) {
-                                output_queue.push(e);
+                            // Released
+                            0 => {
+                                if let Some(e) = to_event.key_event(ev.value) {
+                                    output_queue.push(e);
+                                }
+                                if let Some(v) = to_event.modifiers(ev.value) {
+                                    output_queue.extend(v);
+                                }
                             }
-                        }
-                        KeyState::Released => {
-                            if let Some(e) = to_event.key_event(key_state) {
-                                output_queue.push(e);
-                            }
-                            if let Some(v) = to_event.modifiers(key_state) {
-                                output_queue.extend(v);
-                            }
-                        }
 
-                        // TODO: handle other key states.
-                        _ => {}
+                            // TODO: handle other key states.
+                            _ => {}
+                        }
                     }
                 }
             }

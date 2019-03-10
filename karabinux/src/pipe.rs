@@ -1,6 +1,6 @@
 use crate::event::Event;
 use crate::util::*;
-use input_linux::sys;
+use evdev_rs::InputEvent;
 use std::io::{self, Read, Write};
 use std::mem;
 use std::slice;
@@ -31,29 +31,35 @@ pub fn reader_thread(i_tx: Sender<Event>) {
     let mut stdin_handle = stdin.lock();
 
     loop {
-        if let Ok(s) = read_struct::<sys::input_event>(&mut stdin_handle) {
-            i_tx.send(Event::KeyEvent(s)).unwrap();
+        if let Ok(ev) = read_struct::<libc::input_event>(&mut stdin_handle) {
+            let ev = InputEvent::from_raw(&ev);
+            i_tx.send(Event::KeyEvent(ev)).unwrap();
         }
     }
 }
 
 // Writer thread: receives structs from a Receiver, and writes them to stdout.
-pub fn writer_thread(o_rx: Receiver<sys::input_event>) {
+pub fn writer_thread(o_rx: Receiver<libc::input_event>) {
     let stdout = io::stdout();
     let mut stdout_handle = stdout.lock();
 
     loop {
         if let Ok(raw_event) = o_rx.recv() {
-            write_struct::<sys::input_event>(&mut stdout_handle, &raw_event).unwrap();
-            write_struct::<sys::input_event>(&mut stdout_handle, &sync_event_now()).unwrap();
+            write_struct::<libc::input_event>(&mut stdout_handle, &raw_event).unwrap();
+            write_struct::<libc::input_event>(&mut stdout_handle, &sync_event_now()).unwrap();
 
             #[cfg(debug)]
             {
-                use input_linux::{InputEvent, Key};
+                use evdev_rs::enums::{EventCode, EV_KEY};
 
-                let ev = InputEvent::from_raw(&raw_event).unwrap();
-                match Key::from_code(ev.code).unwrap() {
-                    Key::KeyEsc | Key::KeyGrave => {}
+                let ev = InputEvent::from_raw(&raw_event);
+                match ev.event_code {
+                    EventCode::EV_KEY(ref key) => {
+                        match key {
+                            EV_KEY::KEY_ESC | EV_KEY::KEY_GRAVE => {},
+                            _ => log_event(&ev, true),
+                        }
+                    },
                     _ => log_event(&ev, true),
                 }
             }

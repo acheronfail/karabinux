@@ -1,7 +1,7 @@
 mod args;
 
 use args::Args;
-use input_linux::{EventKind, InputEvent};
+use evdev_rs::enums::EventType;
 use karabinux::event::Event;
 use karabinux::karabiner::KBConfig;
 use karabinux::pipe;
@@ -37,27 +37,25 @@ fn main() {
     let logic_handle = thread::spawn(move || {
         loop {
             match i_rx.recv() {
-                Ok(Event::KeyEvent(raw_event)) => {
-                    let mut ev = *InputEvent::from_raw(&raw_event).unwrap();
-
-                    match ev.kind {
+                Ok(Event::KeyEvent(mut ev)) => {
+                    match ev.event_type {
                         // These are optional and can be ignored.
                         // https://www.kernel.org/doc/html/v4.17/input/event-codes.html
-                        EventKind::Misc => continue,
+                        EventType::EV_MSC => continue,
 
                         // Ignore all received synchronize events, since we send our own.
-                        EventKind::Synchronize => continue,
+                        EventType::EV_SYN => continue,
 
                         // TODO: should be able to block key repeats (in between down and up)
                         // TODO: simultaneous modifications
                         // TODO: handle mouse actions
-                        EventKind::Key => {
+                        EventType::EV_KEY => {
                             // https://pqrs.org/osx/karabiner/document.html#event-modification-chaining
 
                             state.apply_simple_modifications(&mut ev);
 
-                            for emitted_ev in state.apply_complex_modifications(ev) {
-                                o_tx.send(*emitted_ev.as_raw()).unwrap();
+                            for emitted_ev in state.apply_complex_modifications(&ev) {
+                                o_tx.send(emitted_ev.as_raw()).unwrap();
                             }
 
                             state.update_modifiers(&ev);

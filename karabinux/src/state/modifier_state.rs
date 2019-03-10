@@ -1,4 +1,5 @@
-use input_linux::{InputEvent, Key, KeyState};
+use evdev_rs::InputEvent;
+use evdev_rs::enums::{EventCode, EV_KEY};
 
 #[derive(Debug)]
 pub struct ModifierState {
@@ -27,36 +28,40 @@ impl ModifierState {
     }
 
     pub fn update(&mut self, ev: &InputEvent) {
-        let on = match KeyState::from(ev.value) {
-            KeyState::Pressed => true,
-            KeyState::Released => false,
-            KeyState::Autorepeat => true,
+        let on = match ev.value {
+            // Pressed
+            1 => true,
+            // Released
+            0 => false,
+            // Autorepeat
+            2 => true,
+            // Other
             _ => false,
         };
 
-        match Key::from_code(ev.code).unwrap() {
-            Key::KeyLeftCtrl => self.left_control = on,
-            Key::KeyLeftShift => self.left_shift = on,
-            Key::KeyLeftAlt => self.left_alt = on,
-            Key::KeyLeftMeta => self.left_meta = on,
-            Key::KeyRightCtrl => self.right_control = on,
-            Key::KeyRightShift => self.right_shift = on,
-            Key::KeyRightAlt => self.right_alt = on,
-            Key::KeyRightMeta => self.right_meta = on,
+        match ev.event_code {
+            EventCode::EV_KEY(EV_KEY::KEY_LEFTCTRL) => self.left_control = on,
+            EventCode::EV_KEY(EV_KEY::KEY_LEFTSHIFT) => self.left_shift = on,
+            EventCode::EV_KEY(EV_KEY::KEY_LEFTALT) => self.left_alt = on,
+            EventCode::EV_KEY(EV_KEY::KEY_LEFTMETA) => self.left_meta = on,
+            EventCode::EV_KEY(EV_KEY::KEY_RIGHTCTRL) => self.right_control = on,
+            EventCode::EV_KEY(EV_KEY::KEY_RIGHTSHIFT) => self.right_shift = on,
+            EventCode::EV_KEY(EV_KEY::KEY_RIGHTALT) => self.right_alt = on,
+            EventCode::EV_KEY(EV_KEY::KEY_RIGHTMETA) => self.right_meta = on,
             _ => {}
         }
     }
 
-    // pub fn is_key_pressed(&self, key: &Key) -> bool {
+    // pub fn is_key_pressed(&self, key: &EV_KEY) -> bool {
     //     match key {
-    //         Key::KeyLeftCtrl => self.left_control,
-    //         Key::KeyLeftShift => self.left_shift,
-    //         Key::KeyLeftAlt => self.left_alt,
-    //         Key::KeyLeftMeta => self.left_meta,
-    //         Key::KeyRightCtrl => self.right_control,
-    //         Key::KeyRightShift => self.right_shift,
-    //         Key::KeyRightAlt => self.right_alt,
-    //         Key::KeyRightMeta => self.right_meta,
+    //         EV_KEY::KEY_LEFTCTRL => self.left_control,
+    //         EV_KEY::KEY_LEFTSHIFT => self.left_shift,
+    //         EV_KEY::KEY_LEFTALT => self.left_alt,
+    //         EV_KEY::KEY_LEFTMETA => self.left_meta,
+    //         EV_KEY::KEY_RIGHTCTRL => self.right_control,
+    //         EV_KEY::KEY_RIGHTSHIFT => self.right_shift,
+    //         EV_KEY::KEY_RIGHTALT => self.right_alt,
+    //         EV_KEY::KEY_RIGHTMETA => self.right_meta,
     //         _ => false
     //     }
     // }

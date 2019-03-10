@@ -7,7 +7,8 @@ description = "A shared library for karabinux"
 build = "../build.rs"
 
 [dependencies]
-input-linux = "0.0.1"
+evdev-rs = { git = "https://github.com/acheronfail/evdev-rs/", branch = "feat/uinput" }
+libc = "^0.2.36"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"

@@ -1,6 +1,7 @@
 use crate::karabiner::KBProfile;
 use crate::state::{ComplexManipulator, ModifierState, SimpleManipulator};
-use input_linux::{InputEvent, Key};
+use evdev_rs::InputEvent;
+use evdev_rs::enums::{EventCode, EV_KEY};
 
 #[derive(Debug)]
 pub struct StateManager {
@@ -32,27 +33,25 @@ impl StateManager {
     }
 
     pub fn apply_simple_modifications(&self, ev: &mut InputEvent) {
-        let key = Key::from_code(ev.code).unwrap();
-
         #[cfg(debug)]
         {
-            if key == Key::KeyEsc {
+            if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_ESC) {
                 for _ in 0..30 {
                     eprintln!(".");
                 }
-            } else if key == Key::KeyGrave {
+            } else if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_GRAVE) {
                 eprintln!("\n{:#?}\n", self);
             }
         }
 
         for sm in &self.simple_manipulators {
-            if key == sm.from {
-                ev.code = sm.to as u16;
+            if ev.event_code == EventCode::EV_KEY(sm.from.clone()) {
+                ev.event_code = EventCode::EV_KEY(sm.to.clone());
             }
         }
     }
 
-    pub fn apply_complex_modifications(&self, ev: InputEvent) -> Vec<InputEvent> {
+    pub fn apply_complex_modifications(&self, ev: &InputEvent) -> Vec<InputEvent> {
         // TODO: condition checks
         // TODO: simultaneous events
         let mut output_queue = vec![];
@@ -70,7 +69,7 @@ impl StateManager {
 
         // If no complex manipulators were applied, then just return the event.
         if !applied_manipulator {
-            output_queue.push(ev);
+            output_queue.push(ev.clone());
         }
 
         return output_queue;

@@ -1,6 +1,6 @@
 use crate::karabiner::{FromKBKeyCode, KBFromModifiers};
 use crate::state::ModifierState;
-use input_linux::Key;
+use evdev_rs::enums::EV_KEY;
 
 /// If modifiers is not present: only fire when NO modifiers are pressed
 /// If mandatory is present: (swallow modifiers) needs modifiers to be pressed
@@ -32,14 +32,14 @@ impl FromModifiers {
 
         if let Some(mandatory) = &kb_from_modifiers.mandatory {
             for m in mandatory {
-                let key = Key::from_kb_key_code(&m).unwrap();
+                let key = EV_KEY::from_kb_key_code(&m).unwrap();
                 from_modifiers.set(&key, FromModifier::Mandatory);
             }
         }
 
         if let Some(optional) = &kb_from_modifiers.optional {
             for m in optional {
-                let key = Key::from_kb_key_code(&m).unwrap();
+                let key = EV_KEY::from_kb_key_code(&m).unwrap();
                 from_modifiers.set(&key, FromModifier::Optional);
             }
         }
@@ -47,16 +47,16 @@ impl FromModifiers {
         from_modifiers
     }
 
-    pub fn set(&mut self, key: &Key, modifier: FromModifier) {
+    pub fn set(&mut self, key: &EV_KEY, modifier: FromModifier) {
         match key {
-            Key::KeyLeftCtrl => self.left_control = modifier,
-            Key::KeyLeftShift => self.left_shift = modifier,
-            Key::KeyLeftAlt => self.left_alt = modifier,
-            Key::KeyLeftMeta => self.left_meta = modifier,
-            Key::KeyRightCtrl => self.right_control = modifier,
-            Key::KeyRightShift => self.right_shift = modifier,
-            Key::KeyRightAlt => self.right_alt = modifier,
-            Key::KeyRightMeta => self.right_meta = modifier,
+            EV_KEY::KEY_LEFTCTRL => self.left_control = modifier,
+            EV_KEY::KEY_LEFTSHIFT => self.left_shift = modifier,
+            EV_KEY::KEY_LEFTALT => self.left_alt = modifier,
+            EV_KEY::KEY_LEFTMETA => self.left_meta = modifier,
+            EV_KEY::KEY_RIGHTCTRL => self.right_control = modifier,
+            EV_KEY::KEY_RIGHTSHIFT => self.right_shift = modifier,
+            EV_KEY::KEY_RIGHTALT => self.right_alt = modifier,
+            EV_KEY::KEY_RIGHTMETA => self.right_meta = modifier,
             _ => {}
         }
     }
