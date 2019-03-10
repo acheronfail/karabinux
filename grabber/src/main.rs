@@ -5,8 +5,8 @@ use args::Args;
 use evdev_rs::{BLOCKING, NORMAL};
 use grabber::Grabber;
 use karabinux::pipe::write_struct;
-use std::io;
-use std::process;
+use std::time::Duration;
+use std::{io, process, thread};
 use structopt::StructOpt;
 
 fn main() {
@@ -15,13 +15,16 @@ fn main() {
     // Create a device from the given path.
     let mut grabber = Grabber::from_path(args.device);
 
+    // Pause while the output device is being setup (in the emitter process).
+    thread::sleep(Duration::from_secs(1));
+
     // Grab events (request exclusive access).
     if args.grab {
         grabber.grab();
     }
 
     #[cfg(debug)]
-    let mut last_ev_code = 0;
+    let mut debug_last_ev_code = 0;
 
     // Write any received events from the device straight to stdout.
     let stdout = io::stdout();
@@ -37,12 +40,12 @@ fn main() {
             let (ev_type, ev_code) = event_code_to_int(&ev.event_code);
             if ev_type == 1 && ev.value == 1 {
                 // ev_key && pressed
-                if ev_code == 14 && last_ev_code == 14 {
+                if ev_code == 14 && debug_last_ev_code == 14 {
                     // backspace
                     process::exit(2);
                 }
 
-                last_ev_code = ev_code;
+                debug_last_ev_code = ev_code;
             }
         }
 
