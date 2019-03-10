@@ -14,14 +14,14 @@ fmt:
 
 # Runs `grabber -> mapper -> emitter` with the given device.
 @run device config='./test/config/default.json': build sudo
-	{{RBT}} ./target/debug/grabber -g -v "{{device}}" \
+	{{RBT}} ./target/debug/grabber -g -d "{{device}}" \
 		| {{RBT}} ./target/debug/mapper -c {{config}} \
-		| sudo {{RBT}} ./target/debug/emitter -v "{{device}}"
+		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"
 
 # Runs `grabber -> emitter`.
 @noop device: build sudo
-	{{RBT}} ./target/debug/grabber -g -v "{{device}}" \
-		| sudo {{RBT}} ./target/debug/emitter -v "{{device}}"
+	{{RBT}} ./target/debug/grabber -g -d "{{device}}" \
+		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"
 
 # Prompt for sudo (required by the emitter for `libevdev_uinput` devices).
 @sudo:
