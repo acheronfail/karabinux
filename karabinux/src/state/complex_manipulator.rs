@@ -1,7 +1,8 @@
 use crate::karabiner::{KBComplexModifications, KBManipulator, KBManipulatorKind};
+use crate::key_state::KeyState;
 use crate::state::{FromEvent, ModifierState, ToEvent};
-use evdev_rs::InputEvent;
 use evdev_rs::enums::EventCode;
+use evdev_rs::InputEvent;
 
 #[derive(Debug)]
 pub struct ComplexManipulator {
@@ -75,9 +76,8 @@ impl ComplexManipulator {
                     // TODO: handle repeats in to_events
                     for to_event in &self.to_events {
                         // Emit manipulated event with the correct modifiers.
-                        match ev.value {
-                            // Pressed
-                            1 => {
+                        match KeyState::from(ev.value) {
+                            KeyState::Pressed => {
                                 if let Some(v) = to_event.modifiers(ev.value) {
                                     output_queue.extend(v);
                                 }
@@ -86,7 +86,7 @@ impl ComplexManipulator {
                                 }
                             }
                             // Released
-                            0 => {
+                            KeyState::Released => {
                                 if let Some(e) = to_event.key_event(ev.value) {
                                     output_queue.push(e);
                                 }

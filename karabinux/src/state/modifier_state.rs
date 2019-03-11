@@ -1,5 +1,6 @@
-use evdev_rs::InputEvent;
+use crate::key_state::KeyState;
 use evdev_rs::enums::{EventCode, EV_KEY};
+use evdev_rs::InputEvent;
 
 #[derive(Debug)]
 pub struct ModifierState {
@@ -28,15 +29,11 @@ impl ModifierState {
     }
 
     pub fn update(&mut self, ev: &InputEvent) {
-        let on = match ev.value {
-            // Pressed
-            1 => true,
-            // Released
-            0 => false,
-            // Autorepeat
-            2 => true,
-            // Other
-            _ => false,
+        let on = match KeyState::from(ev.value) {
+            KeyState::Pressed => true,
+            KeyState::Released => false,
+            KeyState::Autorepeat => true,
+            KeyState::Unknown(_) => false,
         };
 
         match ev.event_code {

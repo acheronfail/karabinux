@@ -1,7 +1,7 @@
 use crate::karabiner::KBProfile;
 use crate::state::{ComplexManipulator, ModifierState, SimpleManipulator};
-use evdev_rs::InputEvent;
 use evdev_rs::enums::{EventCode, EV_KEY};
+use evdev_rs::InputEvent;
 
 #[derive(Debug)]
 pub struct StateManager {

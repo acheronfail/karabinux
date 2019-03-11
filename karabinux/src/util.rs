@@ -1,6 +1,7 @@
-use evdev_rs::{InputEvent, TimeVal};
+use crate::key_state::KeyState;
 use evdev_rs::enums::{EventCode, EV_SYN};
 use evdev_rs::util::event_code_to_int;
+use evdev_rs::{InputEvent, TimeVal};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 pub fn event_time_now() -> TimeVal {
@@ -22,12 +23,12 @@ pub fn log_event(ev: &InputEvent, log_all_events: bool) {
     match ev.event_code {
         EventCode::EV_KEY(ref key) => {
             eprintln!(
-                "\r  {:<16}{}({:?})",
+                "\r  {:<16}{:?}({:?})",
                 format!("{:?}", key),
-                if ev.value == 1 { "Pressed" } else { "Released" },
+                KeyState::from(ev.value),
                 event_code_to_int(&ev.event_code).1
             );
-        },
+        }
         _ => {
             if log_all_events {
                 eprintln!("\r  {:?}\t{:?}", ev.event_type, ev.value);

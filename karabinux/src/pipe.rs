@@ -54,11 +54,9 @@ pub fn writer_thread(o_rx: Receiver<libc::input_event>) {
 
                 let ev = InputEvent::from_raw(&raw_event);
                 match ev.event_code {
-                    EventCode::EV_KEY(ref key) => {
-                        match key {
-                            EV_KEY::KEY_ESC | EV_KEY::KEY_GRAVE => {},
-                            _ => log_event(&ev, true),
-                        }
+                    EventCode::EV_KEY(ref key) => match key {
+                        EV_KEY::KEY_ESC | EV_KEY::KEY_GRAVE => {}
+                        _ => log_event(&ev, true),
                     },
                     _ => log_event(&ev, true),
                 }

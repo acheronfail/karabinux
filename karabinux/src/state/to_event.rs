@@ -1,7 +1,7 @@
 use crate::karabiner::{FromKBKeyCode, KBToDefinition};
 use crate::util::event_time_now;
-use evdev_rs::InputEvent;
 use evdev_rs::enums::{EventCode, EV_KEY};
+use evdev_rs::InputEvent;
 
 #[derive(Debug)]
 pub struct ToEvent {
