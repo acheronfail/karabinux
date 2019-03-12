@@ -37,7 +37,7 @@ fn main() {
     let logic_handle = thread::spawn(move || {
         loop {
             match i_rx.recv() {
-                Ok(Event::KeyEvent(mut ev)) => {
+                Ok(Event::KeyEvent(ev)) => {
                     match ev.event_type {
                         // These are optional and can be ignored.
                         // https://www.kernel.org/doc/html/v4.17/input/event-codes.html
@@ -46,22 +46,14 @@ fn main() {
                         // Ignore all received synchronize events, since we send our own.
                         EventType::EV_SYN => continue,
 
-                        // TODO: should be able to block key repeats (in between down and up)
-                        // TODO: simultaneous modifications
-                        // TODO: handle mouse actions
-                        EventType::EV_KEY => {
-                            // https://pqrs.org/osx/karabiner/document.html#event-modification-chaining
-
-                            state.apply_simple_modifications(&mut ev);
-
-                            for emitted_ev in state.apply_complex_modifications(&ev) {
-                                o_tx.send(emitted_ev.as_raw()).unwrap();
-                            }
-
-                            state.update_modifiers(&ev);
-                        }
+                        // Handle key events by sending them to the state.
+                        EventType::EV_KEY => state
+                            .get_mapped_events(ev)
+                            .iter()
+                            .for_each(|ev| o_tx.send(ev.as_raw()).unwrap()),
 
                         // Ignore anything else.
+                        // TODO: handle mouse actions?
                         _ => {}
                     }
                 }

@@ -1,7 +1,7 @@
 RBT = "RUST_BACKTRACE=1"
 
 # Runs the project's tests.
-test: build
+test:
 	cargo test
 
 # Builds the project.
@@ -10,10 +10,10 @@ build:
 
 # Formats the project.
 fmt:
-	cargo fmt
+	cargo fmt --all
 
 # Runs `grabber -> mapper -> emitter` with the given device.
-@run device config='./test/config/default.json': build sudo
+@run device config='./karabinux/tests/config/default.json': build sudo
 	{{RBT}} ./target/debug/grabber -g -d "{{device}}" \
 		| {{RBT}} ./target/debug/mapper -c {{config}} \
 		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"

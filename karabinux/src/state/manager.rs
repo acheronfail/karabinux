@@ -28,11 +28,26 @@ impl StateManager {
         }
     }
 
-    pub fn update_modifiers(&mut self, ev: &InputEvent) {
+    // https://pqrs.org/osx/karabiner/document.html#event-modification-chaining
+    pub fn get_mapped_events(&mut self, mut ev: InputEvent) -> Vec<InputEvent> {
+        // Perform simple remapping of keys first.
+        self.apply_simple_modifications(&mut ev);
+
+        // Process our complex manipulators, and get the transformed events.
+        let events = self.apply_complex_modifications(&ev);
+
+        // Update our modifier state.
+        self.update_modifiers(&ev);
+
+        // Return the transformed events.
+        events
+    }
+
+    fn update_modifiers(&mut self, ev: &InputEvent) {
         self.modifier_state.update(ev);
     }
 
-    pub fn apply_simple_modifications(&self, ev: &mut InputEvent) {
+    fn apply_simple_modifications(&self, ev: &mut InputEvent) {
         #[cfg(debug)]
         {
             if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_ESC) {
@@ -51,7 +66,8 @@ impl StateManager {
         }
     }
 
-    pub fn apply_complex_modifications(&self, ev: &InputEvent) -> Vec<InputEvent> {
+    fn apply_complex_modifications(&self, ev: &InputEvent) -> Vec<InputEvent> {
+        // TODO: should be able to block key repeats (in between down and up)
         // TODO: condition checks
         // TODO: simultaneous events
         let mut output_queue = vec![];

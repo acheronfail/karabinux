@@ -1,8 +1,20 @@
 use crate::key_state::KeyState;
-use evdev_rs::enums::{EventCode, EV_SYN};
+use evdev_rs::enums::{EventCode, EV_KEY, EV_SYN};
 use evdev_rs::util::event_code_to_int;
 use evdev_rs::{InputEvent, TimeVal};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+pub const ALL_MODIFIERS: [EV_KEY; 8] = [
+    // EV_KEY::KEY_CAPSLOCK, // TODO: add this as a modifier???
+    EV_KEY::KEY_LEFTALT,
+    EV_KEY::KEY_RIGHTALT,
+    EV_KEY::KEY_LEFTMETA,
+    EV_KEY::KEY_RIGHTMETA,
+    EV_KEY::KEY_LEFTCTRL,
+    EV_KEY::KEY_RIGHTCTRL,
+    EV_KEY::KEY_LEFTSHIFT,
+    EV_KEY::KEY_RIGHTSHIFT,
+];
 
 pub fn event_time_now() -> TimeVal {
     let now = SystemTime::now()

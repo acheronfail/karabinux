@@ -69,10 +69,10 @@ pub fn device_from_config(device_config: &DeviceConfig) -> Device {
     )
     .expect("failed to set REP_DELAY");
     dev.enable_event_code(
-        &EventCode::EV_REP(EV_REP::REP_MAX),
+        &EventCode::EV_REP(EV_REP::REP_PERIOD),
         Some(&device_config.events.ev_rep.repeat_period),
     )
-    .expect("failed to set REP_MAX");
+    .expect("failed to set REP_PERIOD");
 
     dev
 }

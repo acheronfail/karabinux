@@ -1,14 +1,14 @@
-use crate::karabiner::{FromKBKeyCode, KBToDefinition};
-use crate::util::event_time_now;
+use crate::karabiner::{FromKBKeyCode, KBToDefinition, Modifier};
+use crate::key_state::KeyState;
 use evdev_rs::enums::{EventCode, EV_KEY};
-use evdev_rs::InputEvent;
+use evdev_rs::{InputEvent, TimeVal};
 
 #[derive(Debug)]
 pub struct ToEvent {
     pub key: Option<EV_KEY>,
-    pub modifiers: Option<Vec<EV_KEY>>, // TODO: enforce modifier keys?
+    pub modifiers: Vec<Modifier>,
     pub shell_command: Option<String>,
-    pub repeat: Option<bool>,
+    pub repeat: bool,
 }
 
 impl ToEvent {
@@ -20,18 +20,16 @@ impl ToEvent {
         };
 
         let modifiers = if let Some(modifier_key_codes) = &kb_to.modifiers {
-            Some(
-                modifier_key_codes
-                    .iter()
-                    .map(|kc| EV_KEY::from_kb_key_code(kc).unwrap())
-                    .collect(),
-            )
+            modifier_key_codes
+                .iter()
+                .map(|kc| Modifier::from_kb_key_code(kc).unwrap())
+                .collect()
         } else {
-            None
+            vec![]
         };
 
         let shell_command = kb_to.shell_command.clone();
-        let repeat = kb_to.repeat.clone();
+        let repeat = kb_to.repeat.unwrap_or(true);
 
         ToEvent {
             key,
@@ -41,27 +39,10 @@ impl ToEvent {
         }
     }
 
-    pub fn key_event(&self, key_state: i32) -> Option<InputEvent> {
+    pub fn key_event(&self, time: &TimeVal, key_state: KeyState) -> Option<InputEvent> {
         if let Some(key) = &self.key {
-            let now = event_time_now();
             let ev_code = EventCode::EV_KEY(key.clone());
-            Some(InputEvent::new(&now, &ev_code, key_state))
-        } else {
-            None
-        }
-    }
-
-    pub fn modifiers(&self, key_state: i32) -> Option<Vec<InputEvent>> {
-        if let Some(modifiers) = &self.modifiers {
-            let now = event_time_now();
-
-            let mut mods = vec![];
-            for key in modifiers {
-                let ev_code = EventCode::EV_KEY(key.clone());
-                mods.push(InputEvent::new(&now, &ev_code, key_state));
-            }
-
-            Some(mods)
+            Some(InputEvent::new(&time, &ev_code, key_state.into()))
         } else {
             None
         }

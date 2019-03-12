@@ -83,6 +83,21 @@
                                     }
                                 ],
                                 "type": "basic"
+                            },
+                            {
+                                "description": "KARABINUX TEST: 5",
+                                "from": {
+                                    "key_code": "5",
+                                    "modifiers": {
+                                        "optional": ["any"]
+                                    }
+                                },
+                                "to": [
+                                    {
+                                        "key_code": "f"
+                                    }
+                                ],
+                                "type": "basic"
                             }
                         ]
                     }

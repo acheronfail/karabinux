@@ -10,7 +10,6 @@ impl FromKBKeyCode for EV_KEY {
     fn from_kb_key_code(key_code: &str) -> Option<EV_KEY> {
         match key_code {
             "caps_lock" => Some(EV_KEY::KEY_CAPSLOCK),
-            // TODO: handle pairs, ie: "shift" is either "left" or "right"
             "left_control" => Some(EV_KEY::KEY_LEFTCTRL),
             "left_shift" => Some(EV_KEY::KEY_LEFTSHIFT),
             "left_option" => Some(EV_KEY::KEY_LEFTALT), // Alias for alt

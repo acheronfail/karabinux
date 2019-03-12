@@ -1,5 +1,5 @@
 /// An enum that helps to interpret the `value` field of an `InputEvent` struct.
-#[derive(Debug, Clone, Eq, Hash, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub enum KeyState {
     /// The key was pressed
     Pressed,

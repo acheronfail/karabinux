@@ -7,7 +7,7 @@ description = "A program that's responsible for grabbing events from a device an
 build = "../build.rs"
 
 [dependencies]
-evdev-rs = { git = "https://github.com/acheronfail/evdev-rs/", branch = "feat/uinput" }
+evdev-rs = { git = "https://github.com/ndesh26/evdev-rs/" }
 karabinux = { path = "../karabinux" }
 libc = "^0.2.36"
 structopt = "0.2"
