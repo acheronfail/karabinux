@@ -4,6 +4,7 @@ use evdev_rs::InputEvent;
 use std::io::{self, Read, Write};
 use std::mem;
 use std::slice;
+use std::process;
 use std::sync::mpsc::{Receiver, Sender};
 
 // Reads a struct directly from `stdin`.
@@ -31,9 +32,16 @@ pub fn reader_thread(i_tx: Sender<Event>) {
     let mut stdin_handle = stdin.lock();
 
     loop {
-        if let Ok(ev) = read_struct::<libc::input_event>(&mut stdin_handle) {
-            let ev = InputEvent::from_raw(&ev);
-            i_tx.send(Event::KeyEvent(ev)).unwrap();
+        match read_struct::<libc::input_event>(&mut stdin_handle) {
+            Ok(ev) => {
+                let ev = InputEvent::from_raw(&ev);
+                let ev = Event::KeyEvent(ev);
+                i_tx.send(ev).unwrap();
+            },
+            Err(e) => match e.kind() {
+                io::ErrorKind::UnexpectedEof => process::exit(1),
+                error => panic!("failed to read event from stdin: {:?}", error),
+            },
         }
     }
 }
@@ -44,23 +52,12 @@ pub fn writer_thread(o_rx: Receiver<libc::input_event>) {
     let mut stdout_handle = stdout.lock();
 
     loop {
-        if let Ok(raw_event) = o_rx.recv() {
-            write_struct::<libc::input_event>(&mut stdout_handle, &raw_event).unwrap();
-            write_struct::<libc::input_event>(&mut stdout_handle, &sync_event_now()).unwrap();
-
-            #[cfg(debug)]
-            {
-                use evdev_rs::enums::{EventCode, EV_KEY};
-
-                let ev = InputEvent::from_raw(&raw_event);
-                match ev.event_code {
-                    EventCode::EV_KEY(ref key) => match key {
-                        EV_KEY::KEY_ESC | EV_KEY::KEY_GRAVE => {}
-                        _ => log_event(&ev, true),
-                    },
-                    _ => log_event(&ev, true),
-                }
-            }
+        match o_rx.recv() {
+            Ok(raw_event) => {
+                write_struct::<libc::input_event>(&mut stdout_handle, &raw_event).unwrap();
+                write_struct::<libc::input_event>(&mut stdout_handle, &sync_event_now()).unwrap();
+            },
+            Err(e) => panic!("failed to write event to stdout: {:?}", e)
         }
     }
 }

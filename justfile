@@ -18,6 +18,12 @@ fmt:
 		| {{RBT}} ./target/debug/mapper -c {{config}} \
 		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"
 
+# Runs `grabber (with viewer) -> mapper -> emitter` with the given device.
+@view device config='./karabinux/tests/config/default.json': build sudo
+	{{RBT}} ./target/debug/grabber -v -g -d "{{device}}" \
+		| {{RBT}} ./target/debug/mapper -c {{config}} \
+		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"
+
 # Runs `grabber -> emitter`.
 @noop device: build sudo
 	{{RBT}} ./target/debug/grabber -g -d "{{device}}" \

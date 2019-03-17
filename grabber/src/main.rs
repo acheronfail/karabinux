@@ -1,10 +1,7 @@
-mod args;
-mod grabber;
-
-use args::Args;
-use evdev_rs::{BLOCKING, NORMAL};
-use grabber::Grabber;
+use evdev_rs::{Device, GrabMode, ReadFlag};
+use grabber::Args;
 use karabinux::pipe::write_struct;
+use std::fs::File;
 use std::time::Duration;
 use std::{io, process, thread};
 use structopt::StructOpt;
@@ -13,24 +10,44 @@ fn main() {
     let args = Args::from_args();
 
     // Create a device from the given path.
-    let mut grabber = Grabber::from_path(args.device);
+    let file = File::open(&args.device).expect("failed to open device");
+    let mut device = Device::new_from_fd(file).expect("failed to attach to file descriptor");
 
     // Pause while the output device is being setup (in the emitter process).
     thread::sleep(Duration::from_secs(1));
 
     // Grab events (request exclusive access).
     if args.grab {
-        grabber.grab();
+        match device.grab(GrabMode::Grab) {
+            Ok(_) => {}
+            Err(e) => panic!("failed to grab device: {:?}", e),
+        }
     }
 
     #[cfg(debug)]
     let mut debug_last_ev_code = 0;
 
+    #[cfg(feature = "viewer")]
+    let tx: Option<std::sync::mpsc::Sender<_>> = {
+        use grabber::viewer::create_gtk_application;
+        use std::thread;
+
+        let (tx, rx) = std::sync::mpsc::channel();
+        if args.viewer {
+            thread::spawn(move || create_gtk_application(rx));
+            Some(tx)
+        } else {
+            None
+        }
+    };
+
     // Write any received events from the device straight to stdout.
     let stdout = io::stdout();
     let mut stdout_handle = stdout.lock();
     loop {
-        let ev = grabber.next_event(NORMAL | BLOCKING);
+        let (_, ev) = device
+            .next_event(ReadFlag::NORMAL | ReadFlag::BLOCKING)
+            .expect("failed to read event");
 
         // Exit if `backspace` is pressed twice in a row in debug mode.
         #[cfg(debug)]
@@ -49,10 +66,20 @@ fn main() {
             }
         }
 
+        // Send events through to the viewer if enabled.
+        #[cfg(feature = "viewer")]
+        {
+            if args.viewer {
+                if let Some(tx) = tx.as_ref() {
+                    tx.send(ev.clone()).expect("failed to send event to viewer");
+                }
+            }
+        }
+
         // Write struct to stdout.
         match write_struct::<libc::input_event>(&mut stdout_handle, &ev.as_raw()) {
             Ok(_) => continue,
-            Err(_) => process::exit(1),
+            Err(e) => panic!("failed to write event to stdout: {:?}", e),
         }
     }
 }

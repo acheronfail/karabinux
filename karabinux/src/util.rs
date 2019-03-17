@@ -1,20 +1,37 @@
+use crate::constants::KARABINUX_DEVICE_NAME;
 use crate::key_state::KeyState;
-use evdev_rs::enums::{EventCode, EV_KEY, EV_SYN};
+use evdev_rs::enums::{EventCode, EV_SYN};
 use evdev_rs::util::event_code_to_int;
-use evdev_rs::{InputEvent, TimeVal};
+use evdev_rs::{Device, InputEvent, TimeVal};
+use std::fs::{read_dir, File};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub const ALL_MODIFIERS: [EV_KEY; 8] = [
-    // EV_KEY::KEY_CAPSLOCK, // TODO: add this as a modifier???
-    EV_KEY::KEY_LEFTALT,
-    EV_KEY::KEY_RIGHTALT,
-    EV_KEY::KEY_LEFTMETA,
-    EV_KEY::KEY_RIGHTMETA,
-    EV_KEY::KEY_LEFTCTRL,
-    EV_KEY::KEY_RIGHTCTRL,
-    EV_KEY::KEY_LEFTSHIFT,
-    EV_KEY::KEY_RIGHTSHIFT,
-];
+// This needs to return the file descriptor since it must live as long as the
+// device itself.
+// TODO: PR to upstream to ensure that the file descriptor is stored with the
+// device itself
+pub fn find_karabinux_uinput_device() -> Option<Device> {
+    for entry in read_dir("/dev/input").expect("failed to read /dev/input directory") {
+        let entry = entry.expect("failed to open entry");
+        let path = entry.path();
+        if !path.is_dir() {
+            let file = File::open(&path).expect("failed to open path");
+            match Device::new_from_fd(file) {
+                Ok(device) => match device.name() {
+                    Some(name) => {
+                        if name.starts_with(KARABINUX_DEVICE_NAME) {
+                            return Some(device);
+                        }
+                    }
+                    None => continue,
+                },
+                Err(_) => continue,
+            }
+        }
+    }
+
+    None
+}
 
 pub fn event_time_now() -> TimeVal {
     let now = SystemTime::now()

@@ -1,3 +1,4 @@
+use crate::constants::KARABINUX_DEVICE_NAME;
 use evdev_rs::enums::{
     int_to_bus_type, int_to_ev_key, int_to_ev_led, int_to_ev_msc, int_to_ev_syn, int_to_input_prop,
     BusType, EventCode, EventType, InputProp, EV_KEY, EV_LED, EV_MSC, EV_REP, EV_SYN,
@@ -7,9 +8,13 @@ use evdev_rs::Device;
 pub fn device_from_config(device_config: &DeviceConfig) -> Device {
     let dev = Device::new().expect("failed to create device");
 
-    if let Some(name) = &device_config.name {
-        dev.set_name(&name);
-    }
+    // Prefix the device name so we can identity karabinux devices.
+    let name = format!(
+        "{}{}",
+        KARABINUX_DEVICE_NAME,
+        device_config.name.as_ref().unwrap_or(&String::new())
+    );
+    dev.set_name(&name);
 
     if let Some(phys) = &device_config.phys {
         dev.set_phys(&phys);

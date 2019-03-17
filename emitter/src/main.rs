@@ -1,9 +1,8 @@
 mod args;
-mod device_config;
 
 use args::Args;
-use device_config::{device_from_config, DeviceConfig};
 use evdev_rs::{Device, InputEvent, UInputDevice};
+use karabinux::device_config::{device_from_config, DeviceConfig};
 use karabinux::pipe::read_struct;
 use std::fs::File;
 use std::io;
@@ -15,7 +14,7 @@ fn main() {
 
     // First, create a libevdev device.
     let file = File::open(args.device).expect("failed to open device descriptor");
-    let dev = Device::new_from_fd(&file).expect("failed to attach to file descriptor");
+    let dev = Device::new_from_fd(file).expect("failed to attach to file descriptor");
 
     // Then, extract its configuration and create a virtual device from it.
     let config = DeviceConfig::from_device(&dev);
@@ -31,7 +30,7 @@ fn main() {
             Ok(ev) => ev,
             Err(e) => match e.kind() {
                 io::ErrorKind::UnexpectedEof => process::exit(1),
-                error => panic!("{:?}", error),
+                error => panic!("failed to read event from stdin: {:?}", error),
             },
         };
 

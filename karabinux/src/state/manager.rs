@@ -1,6 +1,6 @@
 use crate::karabiner::KBProfile;
 use crate::state::{ComplexManipulator, ModifierState, SimpleManipulator};
-use evdev_rs::enums::{EventCode, EV_KEY};
+use evdev_rs::enums::EventCode;
 use evdev_rs::InputEvent;
 
 #[derive(Debug)]
@@ -48,17 +48,6 @@ impl StateManager {
     }
 
     fn apply_simple_modifications(&self, ev: &mut InputEvent) {
-        #[cfg(debug)]
-        {
-            if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_ESC) {
-                for _ in 0..30 {
-                    eprintln!(".");
-                }
-            } else if ev.event_code == EventCode::EV_KEY(EV_KEY::KEY_GRAVE) {
-                eprintln!("\n{:#?}\n", self);
-            }
-        }
-
         for sm in &self.simple_manipulators {
             if ev.event_code == EventCode::EV_KEY(sm.from.clone()) {
                 ev.event_code = EventCode::EV_KEY(sm.to.clone());

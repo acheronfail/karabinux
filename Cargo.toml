@@ -1,2 +1,7 @@
 [workspace]
-members = ["grabber", "mapper", "emitter", "karabinux"]
+members = [
+  "emitter",
+  "grabber",
+  "karabinux",
+  "mapper"
+]
