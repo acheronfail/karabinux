@@ -65,15 +65,6 @@ impl ComplexManipulator {
         false
     }
 
-    /// If "modifiers" is not present:
-    ///     - only fire when NO modifiers are pressed
-    /// If "modifiers.mandatory" is present:
-    ///     - needs modifiers to be pressed
-    ///     - fire keys without the mandatory modifiers
-    /// If "modifiers.optional" is present:
-    ///     - keys matched independently of modifiers
-    ///     - modifiers fire independently of keys
-    /// See: https://pqrs.org/osx/karabiner/json.html#from-event-definition-modifiers
     pub fn apply(
         &self,
         mod_state: &ModifierState,
@@ -136,8 +127,6 @@ impl ComplexManipulator {
         }
     }
 
-    // TODO: if is "any" key, we need to fire a key_up event on a modifier that's already down
-    // TODO: check which key event is used when there's more than one modifier already down
     fn cancel_mandatory_from_modifiers(
         &self,
         now: &TimeVal,
@@ -156,14 +145,10 @@ impl ComplexManipulator {
             }
 
             if mod_state.is_active(&from_modifier) {
-                // TODO: emit current modifiers in the order they were enabled.
-                for key in mod_state.get_keys(&from_modifier) {
+                for key in mod_state.keys_for_modifier(&from_modifier) {
                     let code = EventCode::EV_KEY(key);
                     let event = InputEvent::new(&now, &code, KeyState::Released.into());
                     events.push(event);
-
-                    // TODO: will we send multiple released events?
-                    //      ^^ think "alt" and "left_alt" / "any" + others?
                     emitted_modifiers.insert(from_modifier);
                 }
             }
