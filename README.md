@@ -1,16 +1,11 @@
-
 # Karabinux
 
-At attempt to port (as much as possible) the functionality of [Karabiner-Elements] to Linux devices.
+At attempt to port (as much as possible) the functionality of [Karabiner-Elements] to Linux.
 
 ## Project structure
 
-The project is divided into separate packages:
-
-* `grabber`: Responsible for intercepting `libevdev` events from device file descriptors
-* `emitter`: Responsible for emitting the mapped events to a virtual `libevdev_uinput` device
-* `mapper`: Responsible for mapping input events to output events (this is where the modifications occur)
-* `karabinux`: A shared set of utilities and configuration which parses Karabiner config and contains the remapping logic
+* `./Cargo.toml`: The top level package provides the binary for `karabinux`. It also handles the connection to `libevdev` and `uinput` which is used for grabbing and emitting events.
+* `./karabinux/Cargo.toml`: This is the core for Karabinux, and contains the core logic as well as utilities and structs for parsing Karabiner configuration files.
 
 ### How does it work?
 
@@ -39,10 +34,22 @@ Take for example, this short exerpt from the [`libevdev` documentation]:
 > 
 > libevdev does not have knowledge of X clients or Wayland clients, it is too low in the stack.
 
+So, Karabinux diverts the normal flow of events, transforms them, and emits new events via a virtual `uinput` device:
+
+```
+BEFORE:
+kernel -> libevdev -> everything else
+
+AFTER:
+kernel -> libevdev              libevdev_uinput -> everything else
+                   \           /
+                     karabinux
+```
+
 ## Using the project
 
 This project uses [`just`] to run commands.
-A useful set of commands is found in the `justfile`, run `just --list` to see it.
+A useful set of commands is found in the [`justfile`], run `just --list` to see it.
 
 ## Development
 
@@ -53,18 +60,21 @@ When running the project in debug mode, the following shortcuts are available:
 
 If you want a graphical representation of the event mappings, you can use the `just view /dev/input/path/to/your/device` command. This creates a GTK window and displays the mappings live. 
 
-## References
+## References & Related
 
 * [`libevdev` documentation]
 * [Linux Input documentation]
 * [Karabiner]
 	- [Karabiner documentation]
-	- [Karabiner config referenence]
+	- [Karabiner configuration reference]
+* [Interception Tools]
 
 [`libevdev` documentation]: https://www.freedesktop.org/software/libevdev/doc/latest/index.html
 [Linux Input documentation]: https://www.kernel.org/doc/html/v4.17/input/
 [Karabiner-Elements]: https://github.com/tekezo/Karabiner-Elements
 [Karabiner]: https://pqrs.org/osx/karabiner/
 [Karabiner documentation]: https://pqrs.org/osx/karabiner/json.html
-[Karabiner configuration referenence]: https://pqrs.org/osx/karabiner/document.html
+[Karabiner configuration reference]: https://pqrs.org/osx/karabiner/document.html
+[Interception Tools]: https://gitlab.com/interception/linux/tools
 [`just`]: https://github.com/casey/just
+[`justfile`]: ./justfile

@@ -37,11 +37,9 @@ pub fn event_time_now() -> TimeVal {
     TimeVal::new(now.as_secs() as i64, now.subsec_micros() as i64)
 }
 
-pub fn sync_event_now() -> libc::input_event {
+pub fn sync_event_now() -> InputEvent {
     let ev_code = EventCode::EV_SYN(EV_SYN::SYN_REPORT);
-    let sync_ev = InputEvent::new(&event_time_now(), &ev_code, 0);
-
-    sync_ev.as_raw()
+    InputEvent::new(&event_time_now(), &ev_code, 0)
 }
 
 pub fn log_event(ev: &InputEvent, log_all_events: bool) {

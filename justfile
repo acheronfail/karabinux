@@ -1,33 +1,25 @@
-RBT = "RUST_BACKTRACE=1"
-
-# Runs the project's tests.
-test:
-	cargo test
+rbt = "RUST_BACKTRACE=1"
+config = "./karabinux/tests/config/default.json"
 
 # Builds the project.
 build:
 	cargo build
 
+# Runs the project's tests.
+test:
+	cargo test --all
+
 # Formats the project.
 fmt:
 	cargo fmt --all
 
-# Runs `grabber -> mapper -> emitter` with the given device.
-@run device config='./karabinux/tests/config/default.json': build sudo
-	{{RBT}} ./target/debug/grabber -g -d "{{device}}" \
-		| {{RBT}} ./target/debug/mapper -c {{config}} \
-		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"
+# Runs karabinux with default config with the given device.
+@run device: build sudo
+	sudo {{rbt}} ./target/debug/karabinux -g -d "{{device}}" -c "{{config}}"
 
-# Runs `grabber (with viewer) -> mapper -> emitter` with the given device.
-@view device config='./karabinux/tests/config/default.json': build sudo
-	{{RBT}} ./target/debug/grabber -v -g -d "{{device}}" \
-		| {{RBT}} ./target/debug/mapper -c {{config}} \
-		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"
-
-# Runs `grabber -> emitter`.
-@noop device: build sudo
-	{{RBT}} ./target/debug/grabber -g -d "{{device}}" \
-		| sudo {{RBT}} ./target/debug/emitter -d "{{device}}"
+# Same as `run`, but also activates the event viewer.
+@view device: build sudo
+	sudo {{rbt}} ./target/debug/karabinux -v -g -d "{{device}}" -c "{{config}}"
 
 # Prompt for sudo (required by the emitter for `libevdev_uinput` devices).
 @sudo:

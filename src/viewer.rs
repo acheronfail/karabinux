@@ -1,3 +1,4 @@
+use chrono::offset::TimeZone;
 use evdev_rs::enums::{EventCode, EventType};
 use evdev_rs::ReadFlag;
 use evdev_rs::{InputEvent, TimeVal};
@@ -30,6 +31,8 @@ macro_rules! clone {
 const GRID_BLOCK: u32 = 16;
 const APPLICATION_ID: &'static str = "com.acheronfail.karabinux";
 const APPLICATION_NAME: &'static str = "karabinux event viewer";
+const APPLICATION_WINDOW_WIDTH: i32 = 1024;
+const APPLICATION_WINDOW_HEIGHT: i32 = 768;
 const ROW_COLOR_PRESSED: &'static str = "#77dd77";
 const ROW_COLOR_RELEASED: &'static str = "#dd77dd";
 const ROW_COLOR_AUTOREPEAT: &'static str = "#777777";
@@ -39,6 +42,7 @@ const COLUMNS: [(&'static str, gtk::Type); 5] = [
     ("Event Type", gtk::Type::String),
     ("Event Code", gtk::Type::String),
     ("Time", gtk::Type::String),
+    // This is a "hidden" column (ie: it only provides data, it isn't drawn).
     ("Row Colour", gtk::Type::String),
 ];
 
@@ -52,8 +56,6 @@ fn format_event_code(code: &EventCode) -> String {
 }
 
 fn format_timeval(timeval: &TimeVal) -> String {
-    use chrono::offset::TimeZone;
-
     let datetime = chrono::Local.timestamp(timeval.tv_sec, timeval.tv_usec as u32);
     datetime.to_rfc2822()
 }
@@ -66,7 +68,7 @@ fn add_event_to_list_store(list_store: &gtk::ListStore, ev: &InputEvent) {
                 KeyState::Pressed => ROW_COLOR_PRESSED,
                 KeyState::Released => ROW_COLOR_RELEASED,
                 KeyState::Autorepeat => ROW_COLOR_AUTOREPEAT,
-                _ => ROW_COLOR_OTHER
+                _ => ROW_COLOR_OTHER,
             };
 
             list_store.set(
@@ -77,7 +79,7 @@ fn add_event_to_list_store(list_store: &gtk::ListStore, ev: &InputEvent) {
                     &format!("{:?}", ev.event_type),
                     &format_event_code(&ev.event_code),
                     &format_timeval(&ev.time),
-                    &row_color
+                    &row_color,
                 ],
             );
         }
@@ -131,20 +133,17 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::new(app);
     window.set_title(APPLICATION_NAME);
     window.set_border_width(GRID_BLOCK);
-    window.set_default_size(640, 480);
+    window.set_default_size(APPLICATION_WINDOW_WIDTH, APPLICATION_WINDOW_HEIGHT);
     window.set_position(WindowPosition::Center);
     window.connect_key_press_event(|_, _| gtk::Inhibit(true));
     window
 }
 
 fn attach_store_receiver(rx: glib::Receiver<InputEvent>, list_store: gtk::ListStore) {
-    rx.attach(
-        None,
-        move |ev| {
-            add_event_to_list_store(&list_store, &ev);
-            glib::Continue(true)
-        },
-    );
+    rx.attach(None, move |ev| {
+        add_event_to_list_store(&list_store, &ev);
+        glib::Continue(true)
+    });
 }
 
 pub fn create_gtk_application(event_receiver: Receiver<InputEvent>) {
@@ -155,8 +154,8 @@ pub fn create_gtk_application(event_receiver: Receiver<InputEvent>) {
 
     gtk::init().expect("failed to initialise gtk");
 
-    let app = Application::new(APPLICATION_ID, Default::default())
-        .expect("failed to start application");
+    let app =
+        Application::new(APPLICATION_ID, Default::default()).expect("failed to start application");
 
     app.connect_activate(move |app| {
         // Create main window.

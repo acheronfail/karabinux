@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
 
-/// Arguments for the grabber process.
+/// Arguments for Karabinux.
 #[derive(StructOpt, Debug, Clone)]
-#[structopt(name = "basic")]
+#[structopt(name = "karabinux")]
 pub struct Args {
-    /// Grab events from the device.
+    /// Exclusively grab events from the device.
     #[structopt(short = "g", long = "grab")]
     pub grab: bool,
 
@@ -17,4 +17,8 @@ pub struct Args {
     /// An input device from /dev/input/*/*.
     #[structopt(short = "d", long = "device", parse(from_os_str))]
     pub device: PathBuf,
+
+    /// Path to a Karabiner config file.
+    #[structopt(short = "c", long = "config", parse(from_os_str))]
+    pub config: PathBuf,
 }
