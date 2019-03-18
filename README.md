@@ -6,8 +6,12 @@ At attempt to port (as much as possible) the functionality of [Karabiner-Element
 
 ## Project structure
 
-* `./Cargo.toml`: The top level package provides the binary for `karabinux`. It also handles the connection to `libevdev` and `uinput` which is used for grabbing and emitting events.
-* `./karabinux/Cargo.toml`: This is the core for Karabinux, and contains the core logic as well as utilities and structs for parsing Karabiner configuration files.
+* [![crates.io](https://img.shields.io/crates/v/karabinux.svg)](https://crates.io/crates/karabinux) `karabinux_cli`:
+	- The top level package provides the binary for `karabinux_cli`.
+	- It also handles the connection to `libevdev` and `uinput` which is used for grabbing and emitting events.
+* [![crates.io](https://img.shields.io/crates/v/karabinux_cli.svg)](https://crates.io/crates/karabinux_cli) `karabinux`:
+	- This is the core library for `karabinux`.
+	- It contains the core logic as well as utilities and structs for parsing Karabiner configuration files.
 
 ### How does it work?
 
