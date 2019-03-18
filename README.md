@@ -71,6 +71,13 @@ If you want a graphical representation of the event mappings, you can use the `j
 	- [Karabiner configuration reference]
 * [Interception Tools]
 
+## License
+
+This library is dual-licensed under either of the following, at your option:
+
+* [Apache License], Version 2.0, (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+* [MIT License] (LICENSE-MIT or http://opensource.org/licenses/MIT)
+
 [`libevdev` documentation]: https://www.freedesktop.org/software/libevdev/doc/latest/index.html
 [Linux Input documentation]: https://www.kernel.org/doc/html/v4.17/input/
 [Karabiner-Elements]: https://github.com/tekezo/Karabiner-Elements
@@ -80,3 +87,5 @@ If you want a graphical representation of the event mappings, you can use the `j
 [Interception Tools]: https://gitlab.com/interception/linux/tools
 [`just`]: https://github.com/casey/just
 [`justfile`]: ./justfile
+[Apache License]: ./LICENSE-APACHE
+[MIT License]: ./LICENSE-MIT
