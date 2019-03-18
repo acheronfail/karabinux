@@ -113,13 +113,14 @@ fn build_table(title: &str, parent_box: &gtk::Box) -> gtk::ListStore {
     scroller.add(&treeview);
 
     // Setup the TreeView's columns.
+    const ROW_COLOR_INDEX: i32 = 4;
     for (i, (title, _)) in COLUMNS.iter().enumerate().take(COLUMNS.len() - 1) {
         let renderer = gtk::CellRendererText::new();
         let column = gtk::TreeViewColumn::new();
         column.pack_start(&renderer, true);
         column.set_title(&title);
         column.add_attribute(&renderer, "text", i as i32);
-        column.add_attribute(&renderer, "foreground", 4);
+        column.add_attribute(&renderer, "foreground", ROW_COLOR_INDEX);
         treeview.append_column(&column);
     }
 
