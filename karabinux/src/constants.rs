@@ -2,7 +2,7 @@ use evdev_rs::enums::EV_KEY;
 
 pub const KARABINUX_DEVICE_NAME: &'static str = "KarabinuxDevice: ";
 
-pub const ALL_MODIFIERS_KEYS: [EV_KEY; 8] = [
+pub const ALL_MODIFIER_KEYS: [EV_KEY; 8] = [
     // EV_KEY::KEY_CAPSLOCK, // TODO: add this as a modifier???
     EV_KEY::KEY_LEFTALT,
     EV_KEY::KEY_RIGHTALT,

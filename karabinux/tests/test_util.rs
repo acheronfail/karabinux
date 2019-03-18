@@ -7,8 +7,7 @@ use karabinux::karabiner::KBConfig;
 use karabinux::key_state::KeyState;
 use karabinux::state::StateManager;
 use pretty_assertions::assert_eq;
-
-pub use karabinux::ALL_MODIFIERS;
+pub use karabinux::constants::ALL_MODIFIER_KEYS;
 
 /// Create a state from the config file with the same name as the test.
 /// Eg, "from_modifiers.rs" will read from "./config/from_modifiers.json".

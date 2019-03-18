@@ -23,7 +23,7 @@ fn no_modifiers_maps_key_with_no_modifiers() {
 
 #[test]
 fn no_modifiers_does_not_map_key_with_modifiers() {
-    for modifier_key in &ALL_MODIFIERS {
+    for modifier_key in &ALL_MODIFIER_KEYS {
         test_complex_modifications(
             CONF_FILE_PATH,
             vec![
@@ -59,7 +59,7 @@ fn mandatory_modifier_any_maps_key_with_no_modifiers() {
 
 // #[test]
 // fn mandatory_modifier_any_maps_key_with_any_modifier_and_cancels_modifier() {
-//     for modifier_key in &ALL_MODIFIERS {
+//     for modifier_key in &ALL_MODIFIER_KEYS {
 //         test_complex_modifications(
 //             CONF_FILE_PATH,
 //             vec![
@@ -159,7 +159,7 @@ fn optional_modifier_any_maps_key_with_no_modifiers() {
 
 #[test]
 fn optional_modifier_any_maps_key_with_any_modifier() {
-    for modifier_key in &ALL_MODIFIERS {
+    for modifier_key in &ALL_MODIFIER_KEYS {
         test_complex_modifications(
             CONF_FILE_PATH,
             vec![
