@@ -6,10 +6,6 @@ use evdev_rs::{Device, InputEvent, TimeVal};
 use std::fs::{read_dir, File};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-// This needs to return the file descriptor since it must live as long as the
-// device itself.
-// TODO: PR to upstream to ensure that the file descriptor is stored with the
-// device itself
 pub fn find_karabinux_uinput_device() -> Option<Device> {
     for entry in read_dir("/dev/input").expect("failed to read /dev/input directory") {
         let entry = entry.expect("failed to open entry");
