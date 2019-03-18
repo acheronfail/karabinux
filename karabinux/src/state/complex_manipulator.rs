@@ -11,7 +11,6 @@ pub struct ComplexManipulator {
     pub description: Option<String>,
     pub from_event: FromEvent,
     pub to_events: Vec<ToEvent>,
-    // TODO: conditions
 }
 
 impl ComplexManipulator {

@@ -55,11 +55,9 @@ fn main() {
                     }
 
                     // Ignore anything else.
-                    // TODO: handle mouse actions?
                     _ => {}
                 }
             }
-            // TODO: handle timeouts when needed
             Ok(Event::Timeout) => {}
             Err(e) => {
                 eprintln!("{:?}", e);

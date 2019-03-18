@@ -126,7 +126,6 @@ impl DeviceConfig {
 
 #[derive(Debug)]
 pub struct DeviceConfigEvents {
-    // TODO: ev_abs ?
     pub ev_syn: Vec<EV_SYN>,
     pub ev_key: Vec<EV_KEY>,
     pub ev_msc: Vec<EV_MSC>,

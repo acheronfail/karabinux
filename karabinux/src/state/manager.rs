@@ -56,9 +56,6 @@ impl StateManager {
     }
 
     fn apply_complex_modifications(&self, ev: &InputEvent) -> Vec<InputEvent> {
-        // TODO: should be able to block key repeats (in between down and up)
-        // TODO: condition checks
-        // TODO: simultaneous events
         let mut output_queue = vec![];
 
         let mut applied_manipulator = false;
