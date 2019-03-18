@@ -2,6 +2,7 @@ mod args;
 mod device;
 mod device_config;
 mod uinput;
+#[cfg(feature = "viewer")]
 mod viewer;
 
 use args::Args;

@@ -1,9 +1,9 @@
-use karabinux::constants::KARABINUX_DEVICE_NAME;
 use evdev_rs::enums::{
     int_to_bus_type, int_to_ev_key, int_to_ev_led, int_to_ev_msc, int_to_ev_syn, int_to_input_prop,
     BusType, EventCode, EventType, InputProp, EV_KEY, EV_LED, EV_MSC, EV_REP, EV_SYN,
 };
 use evdev_rs::Device;
+use karabinux::constants::KARABINUX_DEVICE_NAME;
 
 pub fn device_from_config(device_config: &DeviceConfig) -> Device {
     let dev = Device::new().expect("failed to create device");

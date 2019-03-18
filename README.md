@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/acheronfail/karabinux.svg?branch=master)](https://travis-ci.org/acheronfail/karabinux)
+
 # Karabinux
 
 At attempt to port (as much as possible) the functionality of [Karabiner-Elements] to Linux.
