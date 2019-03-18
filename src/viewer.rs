@@ -29,15 +29,15 @@ macro_rules! clone {
 }
 
 const GRID_BLOCK: u32 = 16;
-const APPLICATION_ID: &'static str = "com.acheronfail.karabinux";
-const APPLICATION_NAME: &'static str = "karabinux event viewer";
+const APPLICATION_ID: &str = "com.acheronfail.karabinux";
+const APPLICATION_NAME: &str = "karabinux event viewer";
 const APPLICATION_WINDOW_WIDTH: i32 = 1024;
 const APPLICATION_WINDOW_HEIGHT: i32 = 768;
-const ROW_COLOR_PRESSED: &'static str = "#77dd77";
-const ROW_COLOR_RELEASED: &'static str = "#dd77dd";
-const ROW_COLOR_AUTOREPEAT: &'static str = "#777777";
-const ROW_COLOR_OTHER: &'static str = "#ff0000";
-const COLUMNS: [(&'static str, gtk::Type); 5] = [
+const ROW_COLOR_PRESSED: &str = "#77dd77";
+const ROW_COLOR_RELEASED: &str = "#dd77dd";
+const ROW_COLOR_AUTOREPEAT: &str = "#777777";
+const ROW_COLOR_OTHER: &str = "#ff0000";
+const COLUMNS: [(&str, gtk::Type); 5] = [
     ("Key State", gtk::Type::String),
     ("Event Type", gtk::Type::String),
     ("Event Code", gtk::Type::String),
@@ -61,30 +61,26 @@ fn format_timeval(timeval: &TimeVal) -> String {
 }
 
 fn add_event_to_list_store(list_store: &gtk::ListStore, ev: &InputEvent) {
-    match ev.event_type {
-        EventType::EV_KEY => {
-            let key_state = KeyState::from(ev.value);
-            let row_color = match key_state {
-                KeyState::Pressed => ROW_COLOR_PRESSED,
-                KeyState::Released => ROW_COLOR_RELEASED,
-                KeyState::Autorepeat => ROW_COLOR_AUTOREPEAT,
-                _ => ROW_COLOR_OTHER,
-            };
+    if let EventType::EV_KEY = ev.event_type {
+        let key_state = KeyState::from(ev.value);
+        let row_color = match key_state {
+            KeyState::Pressed => ROW_COLOR_PRESSED,
+            KeyState::Released => ROW_COLOR_RELEASED,
+            KeyState::Autorepeat => ROW_COLOR_AUTOREPEAT,
+            _ => ROW_COLOR_OTHER,
+        };
 
-            list_store.set(
-                &list_store.prepend(),
-                &[0, 1, 2, 3, 4],
-                &[
-                    &format!("{:?}", key_state),
-                    &format!("{:?}", ev.event_type),
-                    &format_event_code(&ev.event_code),
-                    &format_timeval(&ev.time),
-                    &row_color,
-                ],
-            );
-        }
-        // TODO: support logging other events as well (checkboxes?)
-        _ => {}
+        list_store.set(
+            &list_store.prepend(),
+            &[0, 1, 2, 3, 4],
+            &[
+                &format!("{:?}", key_state),
+                &format!("{:?}", ev.event_type),
+                &format_event_code(&ev.event_code),
+                &format_timeval(&ev.time),
+                &row_color,
+            ],
+        );
     }
 }
 

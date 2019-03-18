@@ -4,6 +4,7 @@ use evdev_rs::enums::{
 };
 use evdev_rs::Device;
 use karabinux::constants::KARABINUX_DEVICE_NAME;
+use std::string::ToString;
 
 pub fn device_from_config(device_config: &DeviceConfig) -> Device {
     let dev = Device::new().expect("failed to create device");
@@ -108,9 +109,9 @@ impl DeviceConfig {
 
         let bustype = device.bustype();
         DeviceConfig {
-            name: device.name().map(|s| s.to_string()),
-            phys: device.phys().map(|s| s.to_string()),
-            uniq: device.uniq().map(|s| s.to_string()),
+            name: device.name().map(ToString::to_string),
+            phys: device.phys().map(ToString::to_string),
+            uniq: device.uniq().map(ToString::to_string),
             bustype,
             bustype_string: int_to_bus_type(bustype as u32),
             product_id: device.product_id(),
