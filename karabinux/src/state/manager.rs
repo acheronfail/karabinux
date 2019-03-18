@@ -77,7 +77,7 @@ impl StateManager {
             output_queue.push(ev.clone());
         }
 
-        return output_queue;
+        output_queue
     }
 }
 

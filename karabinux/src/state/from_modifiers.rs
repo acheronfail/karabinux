@@ -35,19 +35,19 @@ impl FromModifiers {
             }
         }
 
-        FromModifiers { inner: inner }
+        FromModifiers { inner }
     }
 
-    pub fn get(&self, key: &Modifier) -> Option<&FromModifier> {
-        self.inner.get(key)
+    pub fn get(&self, key: Modifier) -> Option<&FromModifier> {
+        self.inner.get(&key)
     }
 
     pub fn set(&mut self, key: Modifier, value: FromModifier) {
         self.inner.insert(key, value);
     }
 
-    pub fn has(&self, key: &Modifier) -> bool {
-        self.inner.contains_key(key)
+    pub fn has(&self, key: Modifier) -> bool {
+        self.inner.contains_key(&key)
     }
 }
 

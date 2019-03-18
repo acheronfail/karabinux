@@ -62,7 +62,7 @@ impl Modifier {
         }
     }
 
-    pub fn as_key(&self) -> Option<EV_KEY> {
+    pub fn as_key(self) -> Option<EV_KEY> {
         match self {
             Modifier::Capslock => Some(EV_KEY::KEY_CAPSLOCK),
             Modifier::LeftAlt => Some(EV_KEY::KEY_LEFTALT),

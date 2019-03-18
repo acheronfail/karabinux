@@ -98,14 +98,6 @@ fn mandatory_modifier_any_maps_key_with_two_modifiers_and_cancels_modifiers() {
             (EV_KEY::KEY_LEFTSHIFT, KeyState::Released),
             (EV_KEY::KEY_D, KeyState::Pressed),
             (EV_KEY::KEY_D, KeyState::Released),
-            // TODO: how does this affect other modifiers before these are let go?
-            // Meaning:
-            //  1 CTRL
-            //  1 SHIFT
-            //  1 C
-            //  0 C
-            //     <-- Now, with CTRL and SHIFT held down, what if there's another
-            //         modifier that requires CTRL and SHIFT, and we activate that?
             (EV_KEY::KEY_LEFTSHIFT, KeyState::Released),
             (EV_KEY::KEY_LEFTCTRL, KeyState::Released),
         ],

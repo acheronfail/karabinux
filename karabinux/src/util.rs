@@ -34,7 +34,7 @@ pub fn event_time_now() -> TimeVal {
         .duration_since(UNIX_EPOCH)
         .expect("unexpected clock drift");
 
-    TimeVal::new(now.as_secs() as i64, now.subsec_micros() as i64)
+    TimeVal::new(now.as_secs() as i64, i64::from(now.subsec_micros()))
 }
 
 pub fn sync_event_now() -> InputEvent {

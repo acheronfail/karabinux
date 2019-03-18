@@ -39,14 +39,11 @@ impl ComplexManipulator {
     pub fn manipulators_from_config(
         kb_complex_modifications: &KBComplexModifications,
     ) -> Vec<ComplexManipulator> {
-        // TODO: handle parameters
-        let complex_manipulators = kb_complex_modifications
+        kb_complex_modifications
             .rules
             .iter()
             .flat_map(|rule| rule.manipulators.iter().map(|m| ComplexManipulator::new(m)))
-            .collect();
-
-        complex_manipulators
+            .collect()
     }
 
     pub fn matches(&self, mod_state: &ModifierState, event: &InputEvent) -> bool {
@@ -144,8 +141,8 @@ impl ComplexManipulator {
                 continue;
             }
 
-            if mod_state.is_active(&from_modifier) {
-                for key in mod_state.keys_for_modifier(&from_modifier) {
+            if mod_state.is_active(*from_modifier) {
+                for key in mod_state.keys_for_modifier(*from_modifier) {
                     let code = EventCode::EV_KEY(key);
                     let event = InputEvent::new(&now, &code, KeyState::Released.into());
                     events.push(event);

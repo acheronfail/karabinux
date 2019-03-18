@@ -5,7 +5,7 @@ use evdev_rs::enums::{EventCode, EV_KEY};
 use evdev_rs::InputEvent;
 use linked_hash_set::LinkedHashSet;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ModifierState {
     inner: LinkedHashSet<Modifier>,
 }
@@ -39,7 +39,7 @@ impl ModifierState {
     }
 
     /// Check whether the given modifier is currently active.
-    pub fn is_active(&self, modifier: &Modifier) -> bool {
+    pub fn is_active(&self, modifier: Modifier) -> bool {
         match modifier {
             Modifier::Any => self.any(),
             Modifier::Alt => self.alt(),
@@ -52,7 +52,7 @@ impl ModifierState {
 
     /// Return a sorted (in the order they were activated) list of modifier keys
     /// that match the passed `Modifier`.
-    pub fn keys_for_modifier(&self, for_modifier: &Modifier) -> Vec<EV_KEY> {
+    pub fn keys_for_modifier(&self, for_modifier: Modifier) -> Vec<EV_KEY> {
         self.inner
             .iter()
             .filter(|&&m| match for_modifier {
@@ -61,7 +61,7 @@ impl ModifierState {
                 Modifier::Meta => m == Modifier::LeftMeta || m == Modifier::RightMeta,
                 Modifier::Shift => m == Modifier::LeftShift || m == Modifier::RightShift,
                 Modifier::Control => m == Modifier::LeftControl || m == Modifier::RightControl,
-                modifier => m == *modifier,
+                modifier => m == modifier,
             })
             .filter_map(|m| m.as_key())
             .collect()
@@ -78,14 +78,14 @@ impl ModifierState {
     /// See: https://pqrs.org/osx/karabiner/json.html#from-event-definition-modifiers
     pub fn matches(&self, fm: &FromModifiers) -> bool {
         // If "any" modifier exists, check that first.
-        if let Some(condition) = fm.get(&Modifier::Any) {
-            return ModifierState::check_condition_pair(&(*condition, self.any()));
+        if let Some(condition) = fm.get(Modifier::Any) {
+            return ModifierState::check_condition_pair((*condition, self.any()));
         }
 
         let mut pairs = vec![];
         let mut try_check = |modifier: Modifier| {
-            if let Some(condition) = fm.get(&modifier) {
-                pairs.push((*condition, self.is_active(&modifier)));
+            if let Some(condition) = fm.get(modifier) {
+                pairs.push((*condition, self.is_active(modifier)));
                 true
             } else {
                 false
@@ -113,21 +113,21 @@ impl ModifierState {
         }
 
         // No from modifiers specified, but we have a modifier -> do not match.
-        if pairs.len() == 0 && self.any() {
+        if pairs.is_empty() && self.any() {
             return false;
         }
 
         pairs
             .iter()
-            .all(|pair| ModifierState::check_condition_pair(pair))
+            .all(|pair| ModifierState::check_condition_pair(*pair))
     }
 
-    fn check_condition_pair(pair: &(FromModifier, bool)) -> bool {
+    fn check_condition_pair(pair: (FromModifier, bool)) -> bool {
         let (cond, state) = pair;
         match cond {
-            FromModifier::Absent => *state == false,
+            FromModifier::Absent => !state,
             FromModifier::Optional => true,
-            FromModifier::Mandatory => *state == true,
+            FromModifier::Mandatory => state,
         }
     }
 
