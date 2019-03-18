@@ -30,22 +30,17 @@ macro_rules! clone {
 const GRID_BLOCK: u32 = 16;
 const APPLICATION_ID: &'static str = "com.acheronfail.karabinux";
 const APPLICATION_NAME: &'static str = "karabinux event viewer";
-
-struct Column {
-    index: i32,
-    title: String,
-    kind: gtk::Type,
-}
-
-impl Column {
-    fn new(index: i32, title: &str, kind: gtk::Type) -> Column {
-        Column {
-            index,
-            title: title.to_string(),
-            kind,
-        }
-    }
-}
+const ROW_COLOR_PRESSED: &'static str = "#77dd77";
+const ROW_COLOR_RELEASED: &'static str = "#dd77dd";
+const ROW_COLOR_AUTOREPEAT: &'static str = "#777777";
+const ROW_COLOR_OTHER: &'static str = "#ff0000";
+const COLUMNS: [(&'static str, gtk::Type); 5] = [
+    ("Key State", gtk::Type::String),
+    ("Event Type", gtk::Type::String),
+    ("Event Code", gtk::Type::String),
+    ("Time", gtk::Type::String),
+    ("Row Colour", gtk::Type::String),
+];
 
 fn format_event_code(code: &EventCode) -> String {
     match code {
@@ -66,14 +61,23 @@ fn format_timeval(timeval: &TimeVal) -> String {
 fn add_event_to_list_store(list_store: &gtk::ListStore, ev: &InputEvent) {
     match ev.event_type {
         EventType::EV_KEY => {
+            let key_state = KeyState::from(ev.value);
+            let row_color = match key_state {
+                KeyState::Pressed => ROW_COLOR_PRESSED,
+                KeyState::Released => ROW_COLOR_RELEASED,
+                KeyState::Autorepeat => ROW_COLOR_AUTOREPEAT,
+                _ => ROW_COLOR_OTHER
+            };
+
             list_store.set(
                 &list_store.prepend(),
-                &[0, 1, 2, 3],
+                &[0, 1, 2, 3, 4],
                 &[
-                    &format!("{:?}", KeyState::from(ev.value)),
+                    &format!("{:?}", key_state),
                     &format!("{:?}", ev.event_type),
                     &format_event_code(&ev.event_code),
                     &format_timeval(&ev.time),
+                    &row_color
                 ],
             );
         }
@@ -83,14 +87,6 @@ fn add_event_to_list_store(list_store: &gtk::ListStore, ev: &InputEvent) {
 }
 
 fn build_table(title: &str, parent_box: &gtk::Box) -> gtk::ListStore {
-    // The columns of the table.
-    let columns: [Column; 4] = [
-        Column::new(0, "Key State", gtk::Type::String),
-        Column::new(1, "Event Type", gtk::Type::String),
-        Column::new(2, "Event Code", gtk::Type::String),
-        Column::new(3, "Time", gtk::Type::String),
-    ];
-
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, GRID_BLOCK as i32);
     parent_box.add(&vbox);
 
@@ -109,7 +105,7 @@ fn build_table(title: &str, parent_box: &gtk::Box) -> gtk::ListStore {
     vbox.add(&scroller);
 
     // Create table to store original events.
-    let column_types = columns.iter().map(|c| c.kind).collect::<Vec<_>>();
+    let column_types = COLUMNS.iter().map(|(_, kind)| *kind).collect::<Vec<_>>();
     let list_store = gtk::ListStore::new(&column_types[..]);
     let treeview = gtk::TreeView::new_with_model(&list_store);
     treeview.set_hexpand(true);
@@ -117,12 +113,13 @@ fn build_table(title: &str, parent_box: &gtk::Box) -> gtk::ListStore {
     scroller.add(&treeview);
 
     // Setup the TreeView's columns.
-    for col in columns.iter() {
+    for (i, (title, _)) in COLUMNS.iter().enumerate().take(COLUMNS.len() - 1) {
         let renderer = gtk::CellRendererText::new();
         let column = gtk::TreeViewColumn::new();
         column.pack_start(&renderer, true);
-        column.set_title(&col.title);
-        column.add_attribute(&renderer, "text", col.index);
+        column.set_title(&title);
+        column.add_attribute(&renderer, "text", i as i32);
+        column.add_attribute(&renderer, "foreground", 4);
         treeview.append_column(&column);
     }
 
