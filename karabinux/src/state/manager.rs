@@ -1,6 +1,6 @@
+use crate::event::KeyEvent;
 use crate::karabiner::KBProfile;
 use crate::state::{ComplexManipulator, ModifierState, SimpleManipulator};
-use evdev_rs::enums::EventCode;
 use evdev_rs::InputEvent;
 
 #[derive(Debug)]
@@ -29,39 +29,35 @@ impl StateManager {
     }
 
     // https://pqrs.org/osx/karabiner/document.html#event-modification-chaining
-    pub fn get_mapped_events(&mut self, mut ev: InputEvent) -> Vec<InputEvent> {
+    pub fn get_mapped_events(&mut self, mut key_event: KeyEvent) -> Vec<InputEvent> {
         // Perform simple remapping of keys first.
-        self.apply_simple_modifications(&mut ev);
+        self.apply_simple_modifications(&mut key_event);
 
         // Process our complex manipulators, and get the transformed events.
-        let events = self.apply_complex_modifications(&ev);
+        let events = self.apply_complex_modifications(&mut key_event);
 
         // Update our modifier state.
-        self.update_modifiers(&ev);
+        self.modifier_state.update(&key_event);
 
         // Return the transformed events.
         events
     }
 
-    fn update_modifiers(&mut self, ev: &InputEvent) {
-        self.modifier_state.update(ev);
-    }
-
-    fn apply_simple_modifications(&self, ev: &mut InputEvent) {
+    fn apply_simple_modifications(&self, key_event: &mut KeyEvent) {
         for sm in &self.simple_manipulators {
-            if ev.event_code == EventCode::EV_KEY(sm.from.clone()) {
-                ev.event_code = EventCode::EV_KEY(sm.to.clone());
+            if key_event.key == sm.from {
+                key_event.key = sm.to.clone();
             }
         }
     }
 
-    fn apply_complex_modifications(&self, ev: &InputEvent) -> Vec<InputEvent> {
+    fn apply_complex_modifications(&mut self, key_event: &mut KeyEvent) -> Vec<InputEvent> {
         let mut output_queue = vec![];
 
         let mut applied_manipulator = false;
-        for cm in &self.complex_manipulators {
-            if cm.matches(&self.modifier_state, &ev) {
-                cm.apply(&self.modifier_state, &ev, &mut output_queue);
+        for cm in self.complex_manipulators.iter_mut() {
+            if cm.matches(&self.modifier_state, key_event) {
+                cm.apply(&self.modifier_state, key_event, &mut output_queue);
 
                 // Only apply the first complex manipulator that matches.
                 applied_manipulator = true;
@@ -71,7 +67,7 @@ impl StateManager {
 
         // If no complex manipulators were applied, then just return the event.
         if !applied_manipulator {
-            output_queue.push(ev.clone());
+            output_queue.push(key_event.create_event());
         }
 
         output_queue

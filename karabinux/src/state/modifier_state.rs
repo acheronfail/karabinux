@@ -1,8 +1,8 @@
+use crate::event::KeyEvent;
 use crate::karabiner::Modifier;
 use crate::key_state::KeyState;
 use crate::state::{FromModifier, FromModifiers};
-use evdev_rs::enums::{EventCode, EV_KEY};
-use evdev_rs::InputEvent;
+use evdev_rs::enums::EV_KEY;
 use linked_hash_set::LinkedHashSet;
 
 #[derive(Debug, Default)]
@@ -21,19 +21,17 @@ impl ModifierState {
     /// Updates the internal state to reflect the passed events.
     /// The `ModifierState` will keep an internal representation of active and
     /// inactive modifiers.
-    pub fn update(&mut self, ev: &InputEvent) {
-        let is_active = match KeyState::from(ev.value) {
+    pub fn update(&mut self, key_event: &KeyEvent) {
+        let is_active = match key_event.key_state {
             KeyState::Pressed | KeyState::Autorepeat => true,
             KeyState::Released | KeyState::Unknown(_) => false,
         };
 
-        if let EventCode::EV_KEY(key) = &ev.event_code {
-            if let Some(modifier) = Modifier::from_key(&key) {
-                if is_active {
-                    self.inner.insert(modifier);
-                } else {
-                    self.inner.remove(&modifier);
-                }
+        if let Some(modifier) = Modifier::from_key(&key_event.key) {
+            if is_active {
+                self.inner.insert(modifier);
+            } else {
+                self.inner.remove(&modifier);
             }
         }
     }
@@ -76,7 +74,7 @@ impl ModifierState {
     ///     - keys matched independently of modifiers
     ///     - modifiers fire independently of keys
     /// See: https://pqrs.org/osx/karabiner/json.html#from-event-definition-modifiers
-    pub fn matches(&self, fm: &FromModifiers) -> bool {
+    pub fn matches(&self, fm: &FromModifiers, event_modifier: Option<Modifier>) -> bool {
         // If "any" modifier exists, check that first.
         if let Some(condition) = fm.get(Modifier::Any) {
             return ModifierState::check_condition_pair((*condition, self.any()));
@@ -85,11 +83,14 @@ impl ModifierState {
         let mut pairs = vec![];
         let mut try_check = |modifier: Modifier| {
             if let Some(condition) = fm.get(modifier) {
-                pairs.push((*condition, self.is_active(modifier)));
-                true
-            } else {
-                false
+                // Filter out the current event if it's a modifier.
+                if Some(modifier) != event_modifier {
+                    pairs.push((*condition, self.is_active(modifier)));
+                }
+                return true;
             }
+
+            false
         };
 
         if !try_check(Modifier::Alt) {
@@ -186,7 +187,7 @@ mod tests {
             from_modifiers.set(modifier.clone(), FromModifier::Absent);
         }
 
-        assert_eq!(empty_state.matches(&from_modifiers), true);
+        assert_eq!(empty_state.matches(&from_modifiers, None), true);
     }
 
     #[test]
@@ -198,7 +199,7 @@ mod tests {
             from_modifiers.set(modifier.clone(), FromModifier::Optional);
         }
 
-        assert_eq!(empty_state.matches(&from_modifiers), true);
+        assert_eq!(empty_state.matches(&from_modifiers, None), true);
     }
 
     #[test]
@@ -210,6 +211,6 @@ mod tests {
             from_modifiers.set(modifier.clone(), FromModifier::Mandatory);
         }
 
-        assert_eq!(empty_state.matches(&from_modifiers), false);
+        assert_eq!(empty_state.matches(&from_modifiers, None), false);
     }
 }

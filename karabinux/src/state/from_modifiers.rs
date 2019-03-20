@@ -9,12 +9,18 @@ pub enum FromModifier {
     Mandatory,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FromModifiers {
     inner: HashMap<Modifier, FromModifier>,
 }
 
 impl FromModifiers {
+    pub fn new() -> FromModifiers {
+        FromModifiers {
+            inner: HashMap::new(),
+        }
+    }
+
     pub fn from_config(kb_from_modifiers: &KBFromModifiers) -> FromModifiers {
         let mut inner = HashMap::new();
         let mut parse_key_code = |key_code: &str, fm: FromModifier| {
@@ -57,13 +63,5 @@ impl<'a> IntoIterator for &'a FromModifiers {
 
     fn into_iter(self) -> Self::IntoIter {
         self.inner.iter()
-    }
-}
-
-impl Default for FromModifiers {
-    fn default() -> FromModifiers {
-        FromModifiers {
-            inner: HashMap::new(),
-        }
     }
 }

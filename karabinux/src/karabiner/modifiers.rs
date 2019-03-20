@@ -47,6 +47,10 @@ impl Modifier {
         Modifier::RightControl,
     ];
 
+    pub fn is_modifier(key: &EV_KEY) -> bool {
+        Modifier::from_key(key).is_some()
+    }
+
     pub fn from_key(key: &EV_KEY) -> Option<Modifier> {
         match key {
             EV_KEY::KEY_CAPSLOCK => Some(Modifier::Capslock),

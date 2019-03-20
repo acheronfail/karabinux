@@ -77,7 +77,7 @@ fn event_reader(i_tx: Sender<Event>, args: Args) {
                     }
                 }
 
-                i_tx.send(Event::KeyEvent(ev))
+                i_tx.send(Event::InputEvent(ev))
                     .expect("failed to send event");
             }
             Err(errno) => match errno {

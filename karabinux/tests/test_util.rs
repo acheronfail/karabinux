@@ -6,6 +6,7 @@ use evdev_rs::{InputEvent, TimeVal};
 use karabinux::karabiner::KBConfig;
 use karabinux::key_state::KeyState;
 use karabinux::state::StateManager;
+use karabinux::event::KeyEvent;
 use pretty_assertions::assert_eq;
 
 pub use karabinux::constants::ALL_MODIFIER_KEYS;
@@ -19,11 +20,11 @@ pub fn create_state(conf_file_name: &str) -> StateManager {
     StateManager::from_profile(&kb_config.profiles[0])
 }
 
-pub fn create_key_event(key: EV_KEY, value: KeyState) -> InputEvent {
-    InputEventBuilder::new()
+pub fn create_key_event(key: EV_KEY, value: KeyState) -> KeyEvent {
+    KeyEvent::new(InputEventBuilder::new()
         .code(EventCode::EV_KEY(key))
         .val(value.into())
-        .build()
+        .build())
 }
 
 pub fn send_key(state: &mut StateManager, key: EV_KEY, value: KeyState) -> Vec<InputEvent> {

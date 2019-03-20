@@ -1,6 +1,6 @@
 use crate::constants::KARABINUX_DEVICE_NAME;
 use crate::key_state::KeyState;
-use evdev_rs::enums::{EventCode, EV_SYN};
+use evdev_rs::enums::{EventCode, EV_KEY, EV_SYN};
 use evdev_rs::util::event_code_to_int;
 use evdev_rs::{Device, InputEvent, TimeVal};
 use std::fs::{read_dir, File};
@@ -29,6 +29,13 @@ pub fn find_karabinux_uinput_device() -> Option<Device> {
     None
 }
 
+pub fn key_from_event_code(code: &EventCode) -> Option<EV_KEY> {
+    match code {
+        EventCode::EV_KEY(key) => Some(key.clone()),
+        _ => None,
+    }
+}
+
 pub fn event_time_now() -> TimeVal {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -40,6 +47,10 @@ pub fn event_time_now() -> TimeVal {
 pub fn sync_event_now() -> InputEvent {
     let ev_code = EventCode::EV_SYN(EV_SYN::SYN_REPORT);
     InputEvent::new(&event_time_now(), &ev_code, 0)
+}
+
+pub fn new_key_event(time: &TimeVal, key: &EV_KEY, key_state: KeyState) -> InputEvent {
+    InputEvent::new(time, &EventCode::EV_KEY(key.clone()), key_state.into())
 }
 
 pub fn log_event(ev: &InputEvent, log_all_events: bool) {

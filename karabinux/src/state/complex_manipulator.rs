@@ -1,16 +1,18 @@
-use crate::karabiner::{KBComplexModifications, KBManipulator, KBManipulatorKind};
+use crate::event::KeyEvent;
+use crate::karabiner::{KBComplexModifications, KBManipulator, KBManipulatorKind, Modifier};
 use crate::key_state::KeyState;
 use crate::state::{FromEvent, FromModifier, ModifierState, ToEvent};
-use crate::util::event_time_now;
-use evdev_rs::enums::EventCode;
-use evdev_rs::{InputEvent, TimeVal};
-use std::collections::HashSet;
+use crate::util::new_key_event;
+use evdev_rs::InputEvent;
+use linked_hash_set::LinkedHashSet;
 
 #[derive(Debug)]
 pub struct ComplexManipulator {
     pub description: Option<String>,
     pub from_event: FromEvent,
     pub to_events: Vec<ToEvent>,
+
+    cancelled_from_mandatory_modifiers: LinkedHashSet<Modifier>,
 }
 
 impl ComplexManipulator {
@@ -30,6 +32,8 @@ impl ComplexManipulator {
                     description,
                     from_event,
                     to_events,
+
+                    cancelled_from_mandatory_modifiers: LinkedHashSet::new(),
                 }
             }
         }
@@ -45,16 +49,17 @@ impl ComplexManipulator {
             .collect()
     }
 
-    pub fn matches(&self, mod_state: &ModifierState, event: &InputEvent) -> bool {
-        if !mod_state.matches(&self.from_event.modifiers) {
+    pub fn matches(&self, mod_state: &ModifierState, key_event: &KeyEvent) -> bool {
+        if !mod_state.matches(
+            &self.from_event.modifiers,
+            Modifier::from_key(&key_event.key),
+        ) {
             return false;
         }
 
-        if let Some(ref from_key) = self.from_event.key {
-            if let EventCode::EV_KEY(ref ev_key) = event.event_code {
-                if from_key == ev_key {
-                    return true;
-                }
+        if let Some(from_key) = &self.from_event.key {
+            if from_key == &key_event.key {
+                return true;
             }
         }
 
@@ -62,115 +67,164 @@ impl ComplexManipulator {
     }
 
     pub fn apply(
-        &self,
+        &mut self,
         mod_state: &ModifierState,
-        event: &InputEvent,
+        key_event: &mut KeyEvent,
         output_queue: &mut Vec<InputEvent>,
     ) {
-        let now = event_time_now();
-        let key_state = KeyState::from(event.value);
+        match key_event.key_state {
+            KeyState::Pressed => {
+                self.cancel_from_mandatory_modifiers(output_queue, mod_state, key_event);
 
-        for to_event in &self.to_events {
-            match key_state {
-                KeyState::Pressed => {
-                    // Clear current mandatory modifiers.
-                    output_queue.extend(self.cancel_mandatory_from_modifiers(&now, mod_state));
+                self.key_pressed_event(output_queue, key_event);
 
-                    // Wrap the emitted key event in modifiers from the "to_event" definition.
-                    output_queue.extend(self.get_to_event_modifiers(
-                        &now,
-                        &to_event,
-                        KeyState::Pressed,
-                    ));
-
-                    // If there's a "to" key event, send the release modifiers with it.
-                    if let Some(event) = to_event.key_event(&now, key_state) {
-                        output_queue.push(event);
-                        output_queue.extend(self.get_to_event_modifiers(
-                            &now,
-                            &to_event,
-                            KeyState::Released,
-                        ));
-                    }
+                if !self.is_last_to_event_modifier_key_event() {
+                    self.restore_from_mandatory_modifiers(output_queue, mod_state, key_event);
                 }
-                KeyState::Released => {
-                    // If there's a "to" key event, just release it (already manipulated).
-                    // Otherwise, send the release modifiers.
-                    if let Some(event) = to_event.key_event(&now, key_state) {
-                        output_queue.push(event);
-                    } else {
-                        output_queue.extend(self.get_to_event_modifiers(
-                            &now,
-                            &to_event,
-                            KeyState::Released,
-                        ));
-                    }
-                }
-                KeyState::Autorepeat => {
-                    if let Some(event) = to_event.key_event(&now, key_state) {
-                        if to_event.repeat {
-                            output_queue.push(event);
-                        }
-                    }
-                }
-                _ => {}
             }
+            KeyState::Released => {
+                if !key_event.key_up_posted {
+                    key_event.key_up_posted = true;
 
-            // Call shell command is one if defined.
-            if let Some(shell_cmd) = &to_event.shell_command {
-                run_shell_command(&shell_cmd);
+                    self.key_released_event(output_queue, key_event);
+                    self.restore_from_mandatory_modifiers(output_queue, mod_state, key_event);
+                }
             }
+            KeyState::Autorepeat => {
+                self.handle_autorepeat_event(output_queue, key_event);
+            }
+            _ => {}
         }
     }
 
-    fn cancel_mandatory_from_modifiers(
-        &self,
-        now: &TimeVal,
+    // TODO: review exceptional cases in src/share/manipulator/manipulators/basic/event_sender.hpp
+    fn cancel_from_mandatory_modifiers(
+        &mut self,
+        output_queue: &mut Vec<InputEvent>,
         mod_state: &ModifierState,
-    ) -> Vec<InputEvent> {
-        let mut events = vec![];
-        let mut emitted_modifiers = HashSet::new();
-
+        key_event: &KeyEvent,
+    ) {
         for (from_modifier, condition) in &self.from_event.modifiers {
             if *condition != FromModifier::Mandatory {
                 continue;
             }
 
-            if emitted_modifiers.contains(&from_modifier) {
+            if self
+                .cancelled_from_mandatory_modifiers
+                .contains(&from_modifier)
+            {
                 continue;
             }
 
             if mod_state.is_active(*from_modifier) {
                 for key in mod_state.keys_for_modifier(*from_modifier) {
-                    let code = EventCode::EV_KEY(key);
-                    let event = InputEvent::new(&now, &code, KeyState::Released.into());
-                    events.push(event);
-                    emitted_modifiers.insert(from_modifier);
+                    output_queue.push(new_key_event(&key_event.time, &key, KeyState::Pressed));
+                }
+
+                self.cancelled_from_mandatory_modifiers
+                    .insert(*from_modifier);
+            }
+        }
+    }
+
+    fn restore_from_mandatory_modifiers(
+        &mut self,
+        output_queue: &mut Vec<InputEvent>,
+        mod_state: &ModifierState,
+        key_event: &KeyEvent,
+    ) {
+        for (from_modifier, condition) in &self.from_event.modifiers {
+            if *condition != FromModifier::Mandatory {
+                continue;
+            }
+
+            if !self
+                .cancelled_from_mandatory_modifiers
+                .contains(&from_modifier)
+            {
+                continue;
+            }
+
+            if mod_state.is_active(*from_modifier) {
+                for key in mod_state.keys_for_modifier(*from_modifier) {
+                    output_queue.push(new_key_event(&key_event.time, &key, KeyState::Pressed));
+                }
+
+                self.cancelled_from_mandatory_modifiers
+                    .remove(from_modifier);
+            }
+        }
+    }
+
+    fn key_pressed_event(&self, output_queue: &mut Vec<InputEvent>, key_event: &mut KeyEvent) {
+        for (i, to_event) in self.to_events.iter().enumerate() {
+            let is_modifier_key_event = {
+                if let Some(key) = &to_event.key {
+                    Modifier::is_modifier(&key)
+                } else {
+                    false
+                }
+            };
+
+            // Modifier key down events.
+            for modifier in &to_event.modifiers {
+                if let Some(key) = modifier.as_key() {
+                    output_queue.push(new_key_event(&key_event.time, &key, KeyState::Pressed));
+                }
+            }
+
+            // Key down event.
+            if let Some(key) = &to_event.key {
+                output_queue.push(new_key_event(&key_event.time, &key, KeyState::Pressed));
+            }
+
+            // Key up event.
+            if let Some(key) = &to_event.key {
+                let event = new_key_event(&key_event.time, &key, KeyState::Released);
+                if i != self.to_events.len() && !to_event.repeat {
+                    output_queue.push(event);
+                } else {
+                    key_event.events_at_key_up.push(event);
+                }
+            }
+
+            // Modifier key up events.
+            for modifier in &to_event.modifiers {
+                if let Some(key) = modifier.as_key() {
+                    let event = new_key_event(&key_event.time, &key, KeyState::Released);
+                    if i == self.to_events.len() && is_modifier_key_event {
+                        key_event.events_at_key_up.push(event);
+                    } else {
+                        output_queue.push(event);
+                    }
                 }
             }
         }
-
-        events
     }
 
-    fn get_to_event_modifiers(
-        &self,
-        now: &TimeVal,
-        to_event: &ToEvent,
-        key_state: KeyState,
-    ) -> Vec<InputEvent> {
-        to_event
-            .modifiers
-            .iter()
-            .filter_map(|modifier| {
-                modifier
-                    .as_key()
-                    .map(|key| InputEvent::new(&now, &EventCode::EV_KEY(key), key_state.into()))
-            })
-            .collect()
+    fn key_released_event(&self, output_queue: &mut Vec<InputEvent>, key_event: &mut KeyEvent) {
+        for event in key_event.events_at_key_up.drain(..) {
+            output_queue.push(event);
+        }
+    }
+
+    fn handle_autorepeat_event(&self, _output_queue: &mut Vec<InputEvent>, _key_event: &KeyEvent) {
+        // TODO: unimplemented
+    }
+
+    fn is_last_to_event_modifier_key_event(&self) -> bool {
+        if let Some(to_event) = self.to_events.last() {
+            if let Some(key) = &to_event.key {
+                return Modifier::is_modifier(&key);
+            }
+        }
+
+        false
     }
 }
 
+// TODO: handle `shell_command` values in `ToEvent`s
+#[allow(dead_code)]
 fn run_shell_command(shell_cmd: &str) {
     use std::process::Command;
     use std::thread;

@@ -7,7 +7,7 @@ mod viewer;
 
 use args::Args;
 use evdev_rs::enums::EventType;
-use karabinux::event::Event;
+use karabinux::event::{Event, KeyEvent};
 use karabinux::karabiner::KBConfig;
 use karabinux::state::StateManager;
 use std::process;
@@ -38,8 +38,8 @@ fn main() {
     // Run karabinux and map events.
     loop {
         match i_rx.recv() {
-            Ok(Event::KeyEvent(ev)) => {
-                match ev.event_type {
+            Ok(Event::InputEvent(input_event)) => {
+                match input_event.event_type {
                     // These are optional and can be ignored.
                     // https://www.kernel.org/doc/html/v4.17/input/event-codes.html
                     EventType::EV_MSC => continue,
@@ -49,7 +49,8 @@ fn main() {
 
                     // Handle key events by transforming them via the state.
                     EventType::EV_KEY => {
-                        for event in state.get_mapped_events(ev) {
+                        let key_event = KeyEvent::new(input_event);
+                        for event in state.get_mapped_events(key_event) {
                             o_tx.send(event).unwrap();
                         }
                     }
