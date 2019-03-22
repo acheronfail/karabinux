@@ -9,32 +9,27 @@ pub enum Event {
     InputEvent(InputEvent),
 }
 
-#[derive(Debug)]
+// Place these on a queue, when when a "released" event occurs search up through
+// the input queue and find the corresponding KeyEvent
+#[derive(Debug, Clone)]
 pub struct KeyEvent {
     pub key: EV_KEY,
-    pub key_state: KeyState,
+    pub state: KeyState,
     pub time: TimeVal,
-    pub manipulated: bool,
-
-    pub key_up_posted: bool,
-    pub events_at_key_up: Vec<InputEvent>,
 }
 
 impl KeyEvent {
-    pub fn new(event: InputEvent) -> KeyEvent {
-        let key = key_from_event_code(&event.event_code).unwrap();
+    pub fn new(pressed_event: InputEvent) -> KeyEvent {
+        let key = key_from_event_code(&pressed_event.event_code).unwrap();
         KeyEvent {
             key,
-            key_state: KeyState::from(event.value),
-            time: event.time,
-            manipulated: false,
-            key_up_posted: false,
-            events_at_key_up: Vec::new(),
+            state: KeyState::from(pressed_event.value),
+            time: pressed_event.time,
         }
     }
 
     pub fn create_event(&self) -> InputEvent {
         let code = EventCode::EV_KEY(self.key.clone());
-        InputEvent::new(&self.time, &code, self.key_state.into())
+        InputEvent::new(&self.time, &code, self.state.into())
     }
 }

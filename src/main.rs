@@ -7,7 +7,7 @@ mod viewer;
 
 use args::Args;
 use evdev_rs::enums::EventType;
-use karabinux::event::{Event, KeyEvent};
+use karabinux::event::{Event};
 use karabinux::karabiner::KBConfig;
 use karabinux::state::StateManager;
 use std::process;
@@ -49,8 +49,7 @@ fn main() {
 
                     // Handle key events by transforming them via the state.
                     EventType::EV_KEY => {
-                        let key_event = KeyEvent::new(input_event);
-                        for event in state.get_mapped_events(key_event) {
+                        for event in state.get_mapped_events(input_event) {
                             o_tx.send(event).unwrap();
                         }
                     }

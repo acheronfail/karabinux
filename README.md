@@ -20,7 +20,7 @@ Take for example, this short exerpt from the [`libevdev` documentation]:
 
 > Where does `libevdev` sit?
 > 
-> `libevdev` is essentially a `read(2)`` on steroids for `/dev/input/eventX` devices. It sits below the process that handles input events, in between the kernel and that process. In the simplest case, e.g. an evtest-like tool the stack would look like this:
+> `libevdev` is essentially a `read(2)` on steroids for `/dev/input/eventX` devices. It sits below the process that handles input events, in between the kernel and that process. In the simplest case, e.g. an evtest-like tool the stack would look like this:
 > 
 > ```
 >  kernel → libevdev → evtest
@@ -61,8 +61,8 @@ A useful set of commands is found in the [`justfile`], run `just --list` to see 
 
 When running the project in debug mode, the following shortcuts are available:
 
-* Press `backspace` twice in a row -> terminates the `grabber` process
-	- Since we grab libevdev devices, you can potentially get yourself into a state where your keyboard no longer works (after `grab`bing the device). This shortcut terminates the `grabber` process.
+* Press `backspace` twice in a row -> terminates the process
+	- Since we grab libevdev devices, you can potentially get yourself into a state where your keyboard no longer works (after `grab`bing the device). This shortcut terminates `karabinux` while in dev mode.
 
 If you want a graphical representation of the event mappings, you can use the `just view /dev/input/path/to/your/device` command. This creates a GTK window and displays the mappings live. 
 

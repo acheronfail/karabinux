@@ -22,7 +22,7 @@ impl ModifierState {
     /// The `ModifierState` will keep an internal representation of active and
     /// inactive modifiers.
     pub fn update(&mut self, key_event: &KeyEvent) {
-        let is_active = match key_event.key_state {
+        let is_active = match key_event.state {
             KeyState::Pressed | KeyState::Autorepeat => true,
             KeyState::Released | KeyState::Unknown(_) => false,
         };
@@ -74,7 +74,7 @@ impl ModifierState {
     ///     - keys matched independently of modifiers
     ///     - modifiers fire independently of keys
     /// See: https://pqrs.org/osx/karabiner/json.html#from-event-definition-modifiers
-    pub fn matches(&self, fm: &FromModifiers, event_modifier: Option<Modifier>) -> bool {
+    pub fn test_modifiers(&self, fm: &FromModifiers, event_modifier: Option<Modifier>) -> bool {
         // If "any" modifier exists, check that first.
         if let Some(condition) = fm.get(Modifier::Any) {
             return ModifierState::check_condition_pair((*condition, self.any()));
@@ -187,7 +187,7 @@ mod tests {
             from_modifiers.set(modifier.clone(), FromModifier::Absent);
         }
 
-        assert_eq!(empty_state.matches(&from_modifiers, None), true);
+        assert_eq!(empty_state.test_modifiers(&from_modifiers, None), true);
     }
 
     #[test]
@@ -199,7 +199,7 @@ mod tests {
             from_modifiers.set(modifier.clone(), FromModifier::Optional);
         }
 
-        assert_eq!(empty_state.matches(&from_modifiers, None), true);
+        assert_eq!(empty_state.test_modifiers(&from_modifiers, None), true);
     }
 
     #[test]
@@ -211,6 +211,6 @@ mod tests {
             from_modifiers.set(modifier.clone(), FromModifier::Mandatory);
         }
 
-        assert_eq!(empty_state.matches(&from_modifiers, None), false);
+        assert_eq!(empty_state.test_modifiers(&from_modifiers, None), false);
     }
 }
