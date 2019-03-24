@@ -70,6 +70,7 @@ pub struct KBToDefinition {
     pub modifiers: Option<Vec<String>>,
     pub shell_command: Option<String>,
     pub repeat: Option<bool>,
+    pub lazy: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

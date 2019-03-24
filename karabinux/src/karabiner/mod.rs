@@ -1,7 +1,7 @@
 pub mod config;
 pub mod key_code;
-pub mod modifiers;
+pub mod modifier;
 
 pub use config::*;
 pub use key_code::*;
-pub use modifiers::*;
+pub use modifier::*;

@@ -51,8 +51,8 @@ fn mandatory_modifier_any_maps_key_with_no_modifiers() {
             (EV_KEY::KEY_C, KeyState::Released),
         ],
         vec![
-            (EV_KEY::KEY_C, KeyState::Pressed),
-            (EV_KEY::KEY_C, KeyState::Released),
+            (EV_KEY::KEY_D, KeyState::Pressed),
+            (EV_KEY::KEY_D, KeyState::Released),
         ],
     );
 }
@@ -98,7 +98,7 @@ fn mandatory_modifier_any_maps_key_with_two_modifiers_and_cancels_modifiers() {
             (EV_KEY::KEY_LEFTSHIFT, KeyState::Released),
             (EV_KEY::KEY_D, KeyState::Pressed),
             (EV_KEY::KEY_D, KeyState::Released),
-            (EV_KEY::KEY_LEFTSHIFT, KeyState::Released),
+            (EV_KEY::KEY_LEFTCTRL, KeyState::Pressed),
             (EV_KEY::KEY_LEFTCTRL, KeyState::Released),
         ],
     );

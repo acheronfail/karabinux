@@ -1,12 +1,12 @@
 use std::cell::RefCell;
+use std::collections::HashSet;
 use evdev_rs::enums::EV_KEY;
 use crate::event::KeyEvent;
-use crate::karabiner::{KBComplexModifications, KBManipulator, KBManipulatorKind, Modifier};
+use crate::karabiner::{KBComplexModifications, KBManipulator, KBManipulatorKind};
 use crate::key_state::KeyState;
-use crate::state::{FromEvent, FromModifier, ModifierState, ToEvent};
+use crate::state::{FromEvent, ModifierKey, ModifierState, ToEvent};
 use crate::util::new_key_event;
 use evdev_rs::{InputEvent, TimeVal};
-use linked_hash_set::LinkedHashSet;
 
 #[derive(Debug)]
 struct ManipulationEvent {
@@ -14,19 +14,23 @@ struct ManipulationEvent {
     pub state: KeyState,
     pub time: TimeVal,
     pub key_up_posted: bool,
+
+    pub cancelled_from_mandatory_modifiers: HashSet<ModifierKey>,
+    pub from_mandatory_modifiers: HashSet<ModifierKey>,
     pub events_at_key_up: Vec<InputEvent>,
-    pub cancelled_from_mandatory_modifiers: LinkedHashSet<Modifier>,
 }
 
 impl ManipulationEvent {
-    pub fn new(key_event: &KeyEvent) -> ManipulationEvent {
+    pub fn new(key_event: &KeyEvent, from_mandatory_modifiers: HashSet<ModifierKey>) -> ManipulationEvent {
         ManipulationEvent {
             key: key_event.key.clone(),
             state: key_event.state,
             time: key_event.time.clone(),
             key_up_posted: false,
+
+            cancelled_from_mandatory_modifiers: HashSet::new(),
+            from_mandatory_modifiers,
             events_at_key_up: vec![],
-            cancelled_from_mandatory_modifiers: LinkedHashSet::new()
         }
     }
 }
@@ -94,7 +98,8 @@ impl ComplexManipulator {
 
         match key_event.state {
             KeyState::Pressed => {
-                if !self.test_from_modifiers(mod_state, key_event) {
+                let from_mandatory_modifiers = self.test_from_modifiers(mod_state);
+                if from_mandatory_modifiers.is_none() {
                     return ManipulationResult::Skipped;
                 }
 
@@ -134,7 +139,12 @@ impl ComplexManipulator {
                 {
                     let mut manipulated_events = self.manipulated_events.borrow_mut();
 
-                    manipulated_events.push(ManipulationEvent::new(key_event));
+                    manipulated_events.push(
+                        ManipulationEvent::new(
+                            key_event,
+                            from_mandatory_modifiers.unwrap(),
+                        )
+                    );
                     current_manipulated_event_index = Some(manipulated_events.len() - 1);
                 }
             },
@@ -152,7 +162,7 @@ impl ComplexManipulator {
         }
 
         if let Some(index) = current_manipulated_event_index {
-            let mut manipulated_events =self.manipulated_events.borrow_mut();
+            let mut manipulated_events = self.manipulated_events.borrow_mut();
             let manipulated_event = manipulated_events.get_mut(index).unwrap();
 
             self.perform_manipulation(mod_state, output_queue, key_event.state, manipulated_event);
@@ -172,14 +182,14 @@ impl ComplexManipulator {
 
         match key_state {
             KeyState::Pressed => {
-                self.cancel_from_mandatory_modifiers(output_queue, mod_state, manipulated_event);
+                self.release_from_mandatory_modifiers(output_queue, mod_state, manipulated_event);
 
                 self.key_pressed_event(output_queue, &mut manipulated_event);
 
                 if !self.is_last_to_event_modifier_key_event() {
-                    dbg!(&output_queue);
-                    self.restore_from_mandatory_modifiers(output_queue, mod_state, manipulated_event);
-                    dbg!(&output_queue);
+                    // dbg!(&output_queue);
+                    self.press_from_mandatory_modifiers(output_queue, manipulated_event);
+                    // dbg!(&output_queue);
                 }
             }
             KeyState::Released => {
@@ -187,7 +197,7 @@ impl ComplexManipulator {
                     manipulated_event.key_up_posted = true;
 
                     self.key_released_event(output_queue, &mut manipulated_event);
-                    self.restore_from_mandatory_modifiers(output_queue, mod_state, manipulated_event);
+                    self.press_from_mandatory_modifiers(output_queue, manipulated_event);
                 }
             }
             KeyState::Autorepeat => {
@@ -207,77 +217,65 @@ impl ComplexManipulator {
         false
     }
 
-    fn test_from_modifiers(&self, mod_state: &ModifierState, key_event: &KeyEvent) -> bool {
-        let current_modifier = Modifier::from_key(&key_event.key);
-        mod_state.test_modifiers(&self.from_event.modifiers, current_modifier)
+    fn test_from_modifiers(&self, mod_state: &ModifierState) -> Option<HashSet<ModifierKey>> {
+        mod_state.test_modifiers(&self.from_event.modifiers)
     }
 
-    // TODO: review exceptional cases in src/share/manipulator/manipulators/basic/event_sender.hpp
-    fn cancel_from_mandatory_modifiers(
+    fn release_from_mandatory_modifiers(
         &self,
         output_queue: &mut Vec<InputEvent>,
         mod_state: &ModifierState,
         manipulated_event: &mut ManipulationEvent,
     ) {
-        for (from_modifier, condition) in &self.from_event.modifiers {
-            if *condition != FromModifier::Mandatory {
+        let mut modifier_keys = vec![];
+
+        for modifier_key in &manipulated_event.from_mandatory_modifiers {
+            if manipulated_event.cancelled_from_mandatory_modifiers.contains(&modifier_key) {
                 continue;
             }
 
-            if manipulated_event
-                .cancelled_from_mandatory_modifiers
-                .contains(&from_modifier)
-            {
-                continue;
+            // TODO: doc
+            if !mod_state.is_pressed(*modifier_key) {
+                continue
             }
 
-            if mod_state.is_active(*from_modifier) {
-                for key in mod_state.keys_for_modifier(*from_modifier) {
-                    output_queue.push(new_key_event(&manipulated_event.time, &key, KeyState::Released));
-                }
-
-                manipulated_event.cancelled_from_mandatory_modifiers
-                    .insert(*from_modifier);
-            }
+            modifier_keys.push(*modifier_key);
+            manipulated_event.cancelled_from_mandatory_modifiers.insert(*modifier_key);
         }
+
+        let modifier_key_events = modifier_keys
+            .iter()
+            .map(|&mk| new_key_event(&manipulated_event.time, &mk.as_key().unwrap(), KeyState::Released));
+        output_queue.extend(modifier_key_events);
     }
 
-    // @@@ behaviour differs,
-    //  see test_modifiers in from_event_definition
-    fn restore_from_mandatory_modifiers(
+    fn press_from_mandatory_modifiers(
         &self,
         output_queue: &mut Vec<InputEvent>,
-        mod_state: &ModifierState,
         manipulated_event: &mut ManipulationEvent,
     ) {
-        for (from_modifier, condition) in &self.from_event.modifiers {
-            if *condition != FromModifier::Mandatory {
+        let mut modifier_keys = vec![];
+
+        for modifier_key in &manipulated_event.from_mandatory_modifiers {
+            if !manipulated_event.cancelled_from_mandatory_modifiers.contains(&modifier_key) {
                 continue;
             }
 
-            if !manipulated_event
-                .cancelled_from_mandatory_modifiers
-                .contains(&from_modifier)
-            {
-                continue;
-            }
-
-            if mod_state.is_active(*from_modifier) {
-                for key in mod_state.keys_for_modifier(*from_modifier) {
-                    output_queue.push(new_key_event(&manipulated_event.time, &key, KeyState::Pressed));
-                }
-
-                manipulated_event.cancelled_from_mandatory_modifiers
-                    .remove(from_modifier);
-            }
+            modifier_keys.push(*modifier_key);
+            manipulated_event.cancelled_from_mandatory_modifiers.remove(&modifier_key);
         }
+
+        let modifier_key_events = modifier_keys
+            .iter()
+            .map(|&mk| new_key_event(&manipulated_event.time, &mk.as_key().unwrap(), KeyState::Pressed));
+        output_queue.extend(modifier_key_events);
     }
 
     fn key_pressed_event(&self, output_queue: &mut Vec<InputEvent>, manipulated_event: &mut ManipulationEvent) {
         for (i, to_event) in self.to_events.iter().enumerate() {
             let is_modifier_key_event = {
                 if let Some(key) = &to_event.key {
-                    Modifier::is_modifier(&key)
+                    ModifierKey::is_modifier(&key)
                 } else {
                     false
                 }
@@ -326,13 +324,13 @@ impl ComplexManipulator {
     }
 
     fn handle_autorepeat_event(&self, _output_queue: &mut Vec<InputEvent>, _manipulated_event: &ManipulationEvent) {
-        // TODO: unimplemented
+        unimplemented!()
     }
 
     fn is_last_to_event_modifier_key_event(&self) -> bool {
         if let Some(to_event) = self.to_events.last() {
             if let Some(key) = &to_event.key {
-                return Modifier::is_modifier(&key);
+                return ModifierKey::is_modifier(&key);
             }
         }
 

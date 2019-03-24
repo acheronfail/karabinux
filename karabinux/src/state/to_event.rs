@@ -1,15 +1,14 @@
-use crate::karabiner::{FromKBKeyCode, KBToDefinition, Modifier};
+use crate::state::ModifierKey;
+use crate::karabiner::{FromKBKeyCode, KBToDefinition};
 use evdev_rs::enums::EV_KEY;
-use evdev_rs::InputEvent;
 
 #[derive(Debug)]
 pub struct ToEvent {
     pub key: Option<EV_KEY>,
-    pub modifiers: Vec<Modifier>,
+    pub modifiers: Vec<ModifierKey>,
     pub shell_command: Option<String>,
     pub repeat: bool,
-
-    events_at_key_up: Vec<InputEvent>,
+    pub lazy: bool,
 }
 
 impl ToEvent {
@@ -23,8 +22,8 @@ impl ToEvent {
         let modifiers = if let Some(modifier_key_codes) = &kb_to.modifiers {
             modifier_key_codes
                 .iter()
-                .map(|kc| match Modifier::from_kb_key_code(kc) {
-                    Some(modifier) => modifier,
+                .map(|kc| match ModifierKey::from_kb_key_code(kc) {
+                    Some(kb_modifier) => kb_modifier,
                     None => panic!("failed to decode modifier: {:?}", kc),
                 })
                 .collect()
@@ -34,18 +33,14 @@ impl ToEvent {
 
         let shell_command = kb_to.shell_command.clone();
         let repeat = kb_to.repeat.unwrap_or(true);
+        let lazy = kb_to.lazy.unwrap_or(false);
 
         ToEvent {
             key,
             modifiers,
             shell_command,
             repeat,
-
-            events_at_key_up: vec![],
+            lazy,
         }
-    }
-
-    pub fn add_event_at_key_up(&mut self, event: InputEvent) {
-        self.events_at_key_up.push(event);
     }
 }
