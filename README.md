@@ -4,6 +4,8 @@
 
 At attempt to port (as much as possible) the functionality of [Karabiner-Elements] to Linux.
 
+**ATTENTION:** This is very much a work in progress - do not expect this to be in a functional state at the moment!
+
 ## Project structure
 
 * [![crates.io](https://img.shields.io/crates/v/karabinux.svg)](https://crates.io/crates/karabinux) `karabinux_cli`:
