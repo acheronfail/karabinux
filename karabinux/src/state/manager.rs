@@ -1,6 +1,6 @@
-use crate::key_state::KeyState;
 use crate::event::KeyEvent;
 use crate::karabiner::KBProfile;
+use crate::key_state::KeyState;
 use crate::state::{ComplexManipulator, ManipulationResult, ModifierState, SimpleManipulator};
 use crate::util::key_from_event_code;
 use evdev_rs::InputEvent;
@@ -11,6 +11,7 @@ pub struct StateManager {
     simple_manipulators: Vec<SimpleManipulator>,
     complex_manipulators: Vec<ComplexManipulator>,
 
+    output_queue: Vec<KeyEvent>,
     input_queue: Vec<KeyEvent>,
 }
 
@@ -29,21 +30,20 @@ impl StateManager {
             modifier_state: ModifierState::new(),
             simple_manipulators,
             complex_manipulators,
-            input_queue: Vec::new(),
+            output_queue: vec![],
+            input_queue: vec![],
         }
     }
 
     // https://pqrs.org/osx/karabiner/document.html#event-modification-chaining
     pub fn get_mapped_events(&mut self, input_event: InputEvent) -> Vec<InputEvent> {
-        let mut output_queue = vec![];
-
         // TODO: support autorepeat events.
         if let Some(mut key_event) = self.get_key_event(input_event) {
             // Perform simple remapping of keys first.
             self.apply_simple_modifications(&mut key_event);
 
             // Process our complex manipulators.
-            self.apply_complex_modifications(&mut output_queue, &mut key_event);
+            self.apply_complex_modifications(&mut key_event);
 
             // Update our modifier state.
             self.modifier_state.update(&key_event);
@@ -52,7 +52,21 @@ impl StateManager {
             self.input_queue.push(key_event);
         }
 
-        output_queue
+        // TODO: check lazies here?
+        // TODO: @@@ handle lazy events? (restore from mandatory modifiers does not work as expected)
+        //  lazy parameter works with modifier. (e.g., "key_code": "left_shift")
+        //  When "lazy": true, the modifier does not send own key events until another key is pressed together.
+        //
+        //  src/share/manipulator/manipulators/post_event_to_virtual_devices/post_event_to_virtual_devices.hpp
+        //  /get_lazy()/
+        let mut events = vec![];
+        for key_event in self.output_queue.drain_filter(|ke| !ke.lazy) {
+            events.push(key_event.create_event());
+        }
+
+        dbg!(&self.output_queue);
+
+        events
     }
 
     fn get_key_event(&mut self, input_event: InputEvent) -> Option<KeyEvent> {
@@ -60,10 +74,11 @@ impl StateManager {
         assert!(self.input_queue.len() < 50);
 
         match KeyState::from(input_event.value) {
-            KeyState::Pressed => Some(KeyEvent::new(input_event)),
+            KeyState::Pressed => Some(KeyEvent::from_event(input_event)),
             KeyState::Released => {
                 let key = key_from_event_code(&input_event.event_code).unwrap();
-                let index = self.input_queue
+                let index = self
+                    .input_queue
                     .iter()
                     .position(|ke| ke.key == key)
                     .expect("failed to find KeyEvent pair in input queue");
@@ -74,10 +89,10 @@ impl StateManager {
                 key_event.state = KeyState::Released;
 
                 Some(key_event)
-            },
+            }
 
             // TODO: support autorepeat events
-            _ => None
+            _ => None,
         }
     }
 
@@ -89,10 +104,10 @@ impl StateManager {
         }
     }
 
-    fn apply_complex_modifications(&mut self, mut output_queue: &mut Vec<InputEvent>, key_event: &mut KeyEvent) {
+    fn apply_complex_modifications(&mut self, key_event: &mut KeyEvent) {
         let mut applied_manipulator = false;
         for cm in self.complex_manipulators.iter_mut() {
-            match cm.manipulate(&self.modifier_state, key_event, &mut output_queue) {
+            match cm.manipulate(&self.modifier_state, key_event, &mut self.output_queue) {
                 ManipulationResult::Skipped => continue,
                 ManipulationResult::Applied => {
                     // Only apply the first complex manipulator that matches.
@@ -104,7 +119,7 @@ impl StateManager {
 
         // If no complex manipulators were applied, then just return the event.
         if !applied_manipulator {
-            output_queue.push(key_event.create_event());
+            self.output_queue.push(key_event.clone());
         }
     }
 }

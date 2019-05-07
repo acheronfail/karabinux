@@ -66,7 +66,6 @@ impl ModifierState {
             return Some(modifier_keys);
         }
 
-
         // Mandatory modifiers.
         for kb_modifier in &KBModifier::VARIANTS {
             if fm.mandatory.contains(kb_modifier) {
@@ -115,52 +114,6 @@ impl ModifierState {
 
         (false, None)
     }
-
-    // /// Return a sorted (in the order they were activated) list of modifier keys
-    // /// that match the passed `Modifier`.
-    // pub fn keys_for_modifier(&self, for_modifier: KBModifier) -> Vec<EV_KEY> {
-    //     self.inner
-    //         .iter()
-    //         .filter(|&&m| match for_modifier {
-    //             KBModifier::Any => true,
-    //             KBModifier::Alt => m == KBModifier::LeftAlt || m == KBModifier::RightAlt,
-    //             KBModifier::Meta => m == KBModifier::LeftMeta || m == KBModifier::RightMeta,
-    //             KBModifier::Shift => m == KBModifier::LeftShift || m == KBModifier::RightShift,
-    //             KBModifier::Control => m == KBModifier::LeftControl || m == KBModifier::RightControl,
-    //             modifier => m == modifier,
-    //         })
-    //         .filter_map(|m| m.as_key())
-    //         .collect()
-    // }
-
-    // // Checks if either of the "control" modifier keys are active.
-    // pub fn control(&self) -> bool {
-    //     self.inner.contains(&KBModifier::LeftControl) || self.inner.contains(&KBModifier::RightControl)
-    // }
-
-    // // Checks if either of the "shift" modifier keys are active.
-    // pub fn shift(&self) -> bool {
-    //     self.inner.contains(&KBModifier::LeftShift) || self.inner.contains(&KBModifier::RightShift)
-    // }
-
-    // // Checks if either of the "alt" modifier keys are active.
-    // pub fn alt(&self) -> bool {
-    //     self.inner.contains(&KBModifier::LeftAlt) || self.inner.contains(&KBModifier::RightAlt)
-    // }
-
-    // // Checks if either of the "meta" modifier keys are active.
-    // pub fn meta(&self) -> bool {
-    //     self.inner.contains(&KBModifier::LeftMeta) || self.inner.contains(&KBModifier::RightMeta)
-    // }
-
-    // // Check if any modifier key is active.
-    // pub fn any(&self) -> bool {
-    //     self.inner.contains(&KBModifier::Capslock)
-    //         || self.control()
-    //         || self.shift()
-    //         || self.alt()
-    //         || self.meta()
-    // }
 }
 
 impl<'a> IntoIterator for &'a ModifierState {

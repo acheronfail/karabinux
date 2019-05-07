@@ -16,15 +16,26 @@ pub struct KeyEvent {
     pub key: EV_KEY,
     pub state: KeyState,
     pub time: TimeVal,
+    pub lazy: bool,
 }
 
 impl KeyEvent {
-    pub fn new(pressed_event: InputEvent) -> KeyEvent {
-        let key = key_from_event_code(&pressed_event.event_code).unwrap();
+    pub fn new(time: &TimeVal, key: &EV_KEY, state: KeyState, lazy: bool) -> KeyEvent {
+        KeyEvent {
+            key: key.clone(),
+            time: time.clone(),
+            state,
+            lazy,
+        }
+    }
+
+    pub fn from_event(event: InputEvent) -> KeyEvent {
+        let key = key_from_event_code(&event.event_code).unwrap();
         KeyEvent {
             key,
-            state: KeyState::from(pressed_event.value),
-            time: pressed_event.time,
+            state: KeyState::from(event.value),
+            time: event.time,
+            lazy: false,
         }
     }
 

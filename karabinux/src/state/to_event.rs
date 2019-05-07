@@ -1,5 +1,5 @@
-use crate::state::ModifierKey;
 use crate::karabiner::{FromKBKeyCode, KBToDefinition};
+use crate::state::ModifierKey;
 use evdev_rs::enums::EV_KEY;
 
 #[derive(Debug)]

@@ -1,5 +1,5 @@
-use evdev_rs::enums::EV_KEY;
 use crate::karabiner::FromKBKeyCode;
+use evdev_rs::enums::EV_KEY;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ModifierKey {
@@ -29,15 +29,15 @@ impl ModifierKey {
 
     pub fn as_key(self) -> Option<EV_KEY> {
         match self {
-             ModifierKey::Capslock => Some(EV_KEY::KEY_CAPSLOCK),
-             ModifierKey::LeftAlt => Some(EV_KEY::KEY_LEFTALT),
-             ModifierKey::RightAlt => Some(EV_KEY::KEY_RIGHTALT),
-             ModifierKey::LeftMeta => Some(EV_KEY::KEY_LEFTMETA),
-             ModifierKey::RightMeta => Some(EV_KEY::KEY_RIGHTMETA),
-             ModifierKey::LeftShift => Some(EV_KEY::KEY_LEFTSHIFT),
-             ModifierKey::RightShift => Some(EV_KEY::KEY_RIGHTSHIFT),
-             ModifierKey::LeftControl => Some(EV_KEY::KEY_LEFTCTRL),
-             ModifierKey::RightControl => Some(EV_KEY::KEY_RIGHTCTRL),
+            ModifierKey::Capslock => Some(EV_KEY::KEY_CAPSLOCK),
+            ModifierKey::LeftAlt => Some(EV_KEY::KEY_LEFTALT),
+            ModifierKey::RightAlt => Some(EV_KEY::KEY_RIGHTALT),
+            ModifierKey::LeftMeta => Some(EV_KEY::KEY_LEFTMETA),
+            ModifierKey::RightMeta => Some(EV_KEY::KEY_RIGHTMETA),
+            ModifierKey::LeftShift => Some(EV_KEY::KEY_LEFTSHIFT),
+            ModifierKey::RightShift => Some(EV_KEY::KEY_RIGHTSHIFT),
+            ModifierKey::LeftControl => Some(EV_KEY::KEY_LEFTCTRL),
+            ModifierKey::RightControl => Some(EV_KEY::KEY_RIGHTCTRL),
         }
     }
 

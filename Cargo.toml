@@ -9,10 +9,15 @@ version = "0.1.0"
 authors = ["acheronfail <acheronfail@gmail.com>"]
 edition = "2018"
 build = "build.rs"
+description = """
+Karabinux (kbx) is a powerful utility for keyboard customization on linux
+platforms that use the libevdev protocol. It provides many different actions
+and remappings and supports configuration files from Karabiner-Elements.
+"""
 
 [[bin]]
 path = "src/main.rs"
-name = "karabinux"
+name = "kbx"
 
 [features]
 default = []

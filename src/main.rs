@@ -7,7 +7,7 @@ mod viewer;
 
 use args::Args;
 use evdev_rs::enums::EventType;
-use karabinux::event::{Event};
+use karabinux::event::Event;
 use karabinux::karabiner::KBConfig;
 use karabinux::state::StateManager;
 use std::process;

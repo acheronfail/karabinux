@@ -34,6 +34,9 @@ impl FromModifiers {
             }
         }
 
-        FromModifiers { mandatory, optional }
+        FromModifiers {
+            mandatory,
+            optional,
+        }
     }
 }

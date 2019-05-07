@@ -25,11 +25,11 @@ fmt-check:
 
 # Runs karabinux with default config with the given device.
 run device: build _sudo
-	sudo {{rbt}} ./target/debug/karabinux -g -d "{{device}}" -c "{{config}}"
+	sudo {{rbt}} ./target/debug/kbx -g -d "{{device}}" -c "{{config}}"
 
 # Same as `run`, but also activates the event viewer.
 view device: build-features-viewer _sudo
-	sudo {{rbt}} ./target/debug/karabinux -v -g -d "{{device}}" -c "{{config}}"
+	sudo {{rbt}} ./target/debug/kbx -v -g -d "{{device}}" -c "{{config}}"
 
 # Publishes all the packages in the workspace.
 publish: build build-features-viewer fmt-check test

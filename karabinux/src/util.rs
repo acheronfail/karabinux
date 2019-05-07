@@ -49,10 +49,6 @@ pub fn sync_event_now() -> InputEvent {
     InputEvent::new(&event_time_now(), &ev_code, 0)
 }
 
-pub fn new_key_event(time: &TimeVal, key: &EV_KEY, key_state: KeyState) -> InputEvent {
-    InputEvent::new(time, &EventCode::EV_KEY(key.clone()), key_state.into())
-}
-
 pub fn log_event(ev: &InputEvent, log_all_events: bool) {
     match ev.event_code {
         EventCode::EV_KEY(ref key) => {
