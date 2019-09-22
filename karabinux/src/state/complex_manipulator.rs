@@ -116,7 +116,7 @@ impl ComplexManipulator {
                 _ => {}
             }
 
-            // Call shell command is one if defined.
+            // Call shell command if one is defined.
             if let Some(shell_cmd) = &to_event.shell_command {
                 run_shell_command(&shell_cmd);
             }
