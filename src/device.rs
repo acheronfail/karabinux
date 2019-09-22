@@ -36,7 +36,6 @@ fn event_reader(i_tx: Sender<Event>, args: Args) {
     #[cfg(feature = "viewer")]
     let tx: Option<std::sync::mpsc::Sender<_>> = {
         use crate::viewer::create_gtk_application;
-        use std::thread;
 
         let (tx, rx) = std::sync::mpsc::channel();
         if args.viewer {

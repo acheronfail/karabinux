@@ -25,7 +25,7 @@ viewer = [
 ]
 
 [dependencies]
-evdev-rs = { git = "https://github.com/ndesh26/evdev-rs" }
+evdev-rs = "0.2.0"
 karabinux = { path = "./karabinux" }
 libc = "^0.2.36"
 structopt = "0.2"

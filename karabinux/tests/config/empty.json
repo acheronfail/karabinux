@@ -1,0 +1,12 @@
+{
+  "profiles": [
+    {
+      "name": "profile name",
+      "selected": true,
+      "simple_modifications": [],
+      "complex_modifications": {
+        "rules": []
+      }
+    }
+  ]
+}

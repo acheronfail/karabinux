@@ -1,5 +1,5 @@
-rbt = "RUST_BACKTRACE=1"
-config = "./karabinux/tests/config/default.json"
+rbt := "RUST_BACKTRACE=1"
+config := "./karabinux/tests/config/empty.json"
 
 # Builds the project.
 build:
