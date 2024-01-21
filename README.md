@@ -4,7 +4,7 @@
 
 At attempt to port (as much as possible) the functionality of [Karabiner-Elements] to Linux.
 
-**ATTENTION:** This is very much a work in progress - do not expect this to be in a functional state at the moment!
+**ATTENTION:** ~~This is very much a work in progress - do not expect this to be in a functional state at the moment!~~ Don't use this, I never got it working. Instead use https://github.com/k0kubun/xremap which is exactly what I wanted this project to be!
 
 ## Project structure
 
